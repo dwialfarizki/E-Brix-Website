@@ -6,7 +6,7 @@ import axios from 'axios';
 import * as turf from '@turf/turf'; 
 import shp from 'shpjs'; 
 
-mapboxgl.accessToken = 'pk.eyJ1IjoiZmFpc2hhbHJpenFpIiwiYSI6ImNtcGRsejhwNDAzeW8ycXB4MTFsa2kxZTEifQ.WUN3IpatA4bpki1CtZThgg';
+mapboxgl.accessToken = 'pk.eyJ1IjoiZS1icml4IiwiYSI6ImNtdWF1aDAwdzAwencyeG9wbWFiN3VzMmcifQ._ntI1xPhnqVQIcm-ZlMiHw';
 
 export default function ManageLand({ blokData, lahanData, fetchSemuaData, setActiveTab }) {
   const drawMapContainer = useRef(null);

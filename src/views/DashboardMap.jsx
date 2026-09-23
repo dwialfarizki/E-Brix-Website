@@ -5,7 +5,7 @@ import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-mapboxgl.accessToken = 'pk.eyJ1IjoiZmFpc2hhbHJpeiIsImEiOiJjbTJhMnR4MjAwdDJ2Mm1zZHgweDR0MjUwIn0.sH4Tz-2x2n8k8jBssM745w';
+mapboxgl.accessToken = 'pk.eyJ1IjoiZS1icml4IiwiYSI6ImNtdWF1aDAwdzAwencyeG9wbWFiN3VzMmcifQ._ntI1xPhnqVQIcm-ZlMiHw';
 
 const DashboardMap = ({ 
     selectedLahan, setSelectedLahan, 
