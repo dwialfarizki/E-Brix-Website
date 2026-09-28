@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 export default function ManagePetani() {
   // ==========================================
@@ -17,7 +18,7 @@ export default function ManagePetani() {
   const [editForm, setEditForm] = useState({ id_user: '', nama: '', nomor_telepon: '', alamat: '' });
   const [isSaving, setIsSaving] = useState(false);
 
-  const BASE_URL = 'https://956qsggs-3000.asse.devtunnels.ms';
+  const BASE_URL = API_BASE_URL;
 
   // ==========================================
   // 📌 2. FUNGSI TARIK DATA (FETCH)

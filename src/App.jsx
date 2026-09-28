@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
+import { API_BASE_URL } from './config';
 
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -42,7 +43,7 @@ function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://956qsggs-3000.asse.devtunnels.ms/auth/login', {
+      const res = await axios.post(`${API_BASE_URL}/auth/login`, {
         username: loginForm.username,
         password: loginForm.password,
         platform: 'web' // Mengirim identitas platform ke backend
@@ -82,7 +83,7 @@ function App() {
     const timestamp = new Date().getTime();
     
     try {
-      const resLahan = await axios.get(`https://956qsggs-3000.asse.devtunnels.ms/lahan?t=${timestamp}`);
+      const resLahan = await axios.get(`${API_BASE_URL}/lahan?t=${timestamp}`);
       const rawLahan = resLahan.data?.data || resLahan.data?.features || resLahan.data || [];
       const arrLahan = Array.isArray(rawLahan) ? rawLahan : [];
       
@@ -100,7 +101,7 @@ function App() {
     }
 
     try {
-      const resBlok = await axios.get(`https://956qsggs-3000.asse.devtunnels.ms/blok?t=${timestamp}`);
+      const resBlok = await axios.get(`${API_BASE_URL}/blok?t=${timestamp}`);
       const rawBlok = resBlok.data?.data || resBlok.data?.features || resBlok.data || [];
       const arrBlok = Array.isArray(rawBlok) ? rawBlok : [];
 
@@ -118,7 +119,7 @@ function App() {
     }
 
     try {
-      const resSampel = await axios.get(`https://956qsggs-3000.asse.devtunnels.ms/data-brix?t=${timestamp}`);
+      const resSampel = await axios.get(`${API_BASE_URL}/data-brix?t=${timestamp}`);
       const rawSampel = resSampel.data?.data || resSampel.data?.features || resSampel.data || [];
       const arrSampel = Array.isArray(rawSampel) ? rawSampel : [];
       setSampelData(arrSampel);
@@ -135,7 +136,7 @@ function App() {
     
     if (isConfirmed) {
       try {
-        await axios.delete(`https://956qsggs-3000.asse.devtunnels.ms/data-brix/${id_titik}`);
+        await axios.delete(`${API_BASE_URL}/data-brix/${id_titik}`);
         fetchSemuaData(); 
       } catch (error) {
         console.error("Gagal menghapus titik:", error);
@@ -152,7 +153,7 @@ function App() {
 
     fetchSemuaData();
     
-    const socket = io('https://956qsggs-3000.asse.devtunnels.ms', { 
+    const socket = io(API_BASE_URL, { 
       transports: ['polling'] 
     });
     

@@ -4,8 +4,9 @@ import MapPopup from '../components/MapPopup';
 import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { API_BASE_URL, MAPBOX_TOKEN } from '../config';
 
-mapboxgl.accessToken = 'pk.eyJ1IjoiZS1icml4IiwiYSI6ImNtdWF1aDAwdzAwencyeG9wbWFiN3VzMmcifQ._ntI1xPhnqVQIcm-ZlMiHw';
+mapboxgl.accessToken = MAPBOX_TOKEN;
 
 const DashboardMap = ({ 
     selectedLahan, setSelectedLahan, 
@@ -175,8 +176,7 @@ const DashboardMap = ({
 
             setIsLoadingEBK(true);
             
-            const baseUrl = 'https://956qsggs-3000.asse.devtunnels.ms'; 
-            const response = await axios.get(`${baseUrl}/api/heatmap?blokId=${idBlokTargetGGE}`);
+            const response = await axios.get(`${API_BASE_URL}/api/heatmap?blokId=${idBlokTargetGGE}`);
             const tileUrl = response.data.tileUrl;
 
             if (tileUrl) {

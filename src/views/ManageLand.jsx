@@ -5,8 +5,9 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import axios from 'axios';
 import * as turf from '@turf/turf'; 
 import shp from 'shpjs'; 
+import { API_BASE_URL, MAPBOX_TOKEN } from '../config';
 
-mapboxgl.accessToken = 'pk.eyJ1IjoiZS1icml4IiwiYSI6ImNtdWF1aDAwdzAwencyeG9wbWFiN3VzMmcifQ._ntI1xPhnqVQIcm-ZlMiHw';
+mapboxgl.accessToken = MAPBOX_TOKEN;
 
 export default function ManageLand({ blokData, lahanData, fetchSemuaData, setActiveTab }) {
   const drawMapContainer = useRef(null);
@@ -93,7 +94,7 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
     const isConfirmed = window.confirm("PERINGATAN \nYakin ingin menghapus Lahan Induk ini? SEMUA Blok Lahan dan Titik Brix di dalamnya akan ikut terhapus permanen!");
     if (isConfirmed) {
         try {
-            await axios.delete(`https://956qsggs-3000.asse.devtunnels.ms/lahan/${id_lahan}`);
+            await axios.delete(`${API_BASE_URL}/lahan/${id_lahan}`);
             alert("✅ Lahan Induk berhasil dihapus!");
             fetchSemuaData(); 
         } catch (error) {
@@ -111,7 +112,7 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
     const isConfirmed = window.confirm("Yakin ingin menghapus Blok Lahan ini? Titik Brix di dalamnya akan ikut terhapus.");
     if (isConfirmed) {
         try {
-            await axios.delete(`https://956qsggs-3000.asse.devtunnels.ms/blok/${id_blok}`);
+            await axios.delete(`${API_BASE_URL}/blok/${id_blok}`);
             alert("✅ Blok Lahan berhasil dihapus!");
             fetchSemuaData(); 
         } catch (error) {
@@ -335,13 +336,13 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
       }
 
       if (mode === 'tambah_lahan') {
-        await axios.post('https://956qsggs-3000.asse.devtunnels.ms/lahan', {
+        await axios.post(`${API_BASE_URL}/lahan`, {
           nama_lahan: formData.nama,
           geojson: geometriBaru
         });
         alert(`✅ Sukses mendaftarkan Lahan Induk: ${formData.nama}!`);
       } else {
-        await axios.post('https://956qsggs-3000.asse.devtunnels.ms/blok', {
+        await axios.post(`${API_BASE_URL}/blok`, {
           id_lahan: formData.id_lahan,
           nama_blok: formData.nama,
           geojson: geometriBaru

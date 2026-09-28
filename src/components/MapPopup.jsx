@@ -1,9 +1,9 @@
 import React from 'react';
 
-// 🌟 1. Tambahkan metodeInput di parameter
-export default function MapPopup({ brix, pengguna, tanggal, pinColor, idTitik, onDelete, metodeInput }) {
+// 🌟 1. Tambahkan jenisTebu di parameter
+export default function MapPopup({ brix, pengguna, tanggal, pinColor, idTitik, onDelete, metodeInput, jenisTebu }) {
     
-    // 🌟 2. Logika untuk membedakan gaya tampilan (badge) otomatis vs manual
+    // Logika untuk membedakan gaya tampilan (badge) otomatis vs manual
     const isOtomatis = metodeInput?.toLowerCase() === 'otomatis';
 
     return (
@@ -18,20 +18,28 @@ export default function MapPopup({ brix, pengguna, tanggal, pinColor, idTitik, o
             </div>
             
             <div className="border-t border-dashed border-gray-200 pt-3 flex flex-col gap-2">
+                
+                {/* 🌟 TAMBAHAN: Baris untuk Jenis Tebu */}
+                <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-500">🌱 Jenis Tebu</span>
+                    <span className="font-bold text-gray-800 truncate max-w-[100px]" title={jenisTebu}>
+                        {jenisTebu || 'Tidak diketahui'}
+                    </span>
+                </div>
+
                 <div className="flex justify-between items-center text-xs">
                     <span className="text-gray-500">👤 Pengguna</span>
                     <span className="font-bold text-gray-800 truncate max-w-[90px]" title={pengguna}>
                         {pengguna}
                     </span>
                 </div>
+                
                 <div className="flex justify-between items-center text-xs">
                     <span className="text-gray-500">📅 Tanggal</span>
                     <span className="font-bold text-gray-800">{tanggal}</span>
                 </div>
                 
-                {/* ==========================================
-                    🌟 TAMBAHAN: Baris untuk Metode Input
-                    ========================================== */}
+                {/* Baris untuk Metode Input */}
                 <div className="flex justify-between items-center text-xs mt-0.5">
                     <span className="text-gray-500">⚙️ Metode</span>
                     <span className={`font-extrabold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-sm ${
@@ -44,9 +52,7 @@ export default function MapPopup({ brix, pengguna, tanggal, pinColor, idTitik, o
                 </div>
             </div>
 
-            {/* ==========================================
-                Tombol Hapus Poin
-                ========================================== */}
+            {/* Tombol Hapus Poin */}
             {onDelete && (
                 <button 
                     onClick={onDelete}
