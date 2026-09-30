@@ -374,8 +374,8 @@ const DashboardMap = ({
     }, [selectedLahan, selectedBlok, lahanData, blokData, sampelData, isMapReady]);
 
 
-    return (
-        <div className="bg-white p-4 rounded-xl shadow flex flex-col h-full border border-gray-100 relative">
+return (
+    <div className="bg-white p-4 pb-4 rounded-xl shadow flex flex-col h-auto border border-gray-100 relative">
             <div className="flex justify-between items-center mb-4 shrink-0">
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-green-600">

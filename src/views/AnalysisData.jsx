@@ -2,24 +2,23 @@ import React, { useMemo, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function AnalysisData({ sampelData, blokData, selectedLahan, selectedBlok, lahanData = [] }) {
-  // ==========================================
-  // 🌟 PERBAIKAN: Default filter diatur agar langsung menampilkan data Terbaru (desc)
-  // ==========================================
+  // PERBAIKAN: Default filter diatur agar langsung menampilkan data Terbaru (desc)
   const [filters, setFilters] = useState({
     nama_lahan: '',
     nama_blok: '',
     nama_petugas: '', 
+    jenis_tebu: '', // TAMBAHAN: State filter untuk jenis tebu
     sort_brix: '',
-    sort_tanggal: 'desc' // <-- Diubah dari '' menjadi 'desc'
+    sort_tanggal: 'desc' 
   });
 
-  // 2. State Filter Rentang Tanggal untuk Grafik Tren
+  // State Filter Rentang Tanggal untuk Grafik Tren
   const [trendDateRange, setTrendDateRange] = useState({
     start: '',
     end: ''
   });
 
-  // --- 📌 LOGIKA GRAFIK TREN BRIX ---
+  // LOGIKA GRAFIK TREN BRIX 
   const chartTrenData = useMemo(() => {
     let dataAktif = sampelData;
 
@@ -112,7 +111,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
     return value > 19 ? '#ef4444' : value >= 15 ? '#f59e0b' : '#10b981'; 
   };
 
-  // --- 📌 LOGIKA TABEL ---
+  // LOGIKA TABEL 
   const tableData = useMemo(() => {
     return sampelData.map((sampel, index) => {
       const idBlokSampel = String(sampel.properties?.id_blok || sampel.id_blok);
@@ -124,6 +123,9 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
       const nilaiBrixAsli = sampel.properties?.nilai_brix || sampel.nilai_brix || 0;
       const namaPetaniAsli = sampel.properties?.nama_petani || sampel.nama_petani || '-';
       
+      // Ekstraksi data jenis_tebu dari backend
+      const jenisTebuAsli = sampel.properties?.jenis_tebu || sampel.jenis_tebu || '-';
+
       const waktuMentah = sampel.properties?.waktu_pengukuran || sampel.properties?.created_at || sampel.waktu_pengukuran;
       const waktuAsli = typeof waktuMentah === 'string' ? waktuMentah.replace(' GMT', '') : waktuMentah;
 
@@ -132,6 +134,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
         nama_lahan: lahan ? (lahan.properties?.nama_lahan || lahan.nama_lahan) : '-',
         nama_blok: blok ? (blok.properties?.nama_blok || blok.nama_blok) : '-',
         nama_petugas: namaPetaniAsli, 
+        jenis_tebu: jenisTebuAsli, // Dimasukkan ke objek row tabel
         latitude: parseFloat(sampel.properties?.latitude || sampel.geometry?.coordinates?.[1] || sampel.latitude || 0).toFixed(6),
         longitude: parseFloat(sampel.properties?.longitude || sampel.geometry?.coordinates?.[0] || sampel.longitude || 0).toFixed(6),
         nilai_brix: parseFloat(nilaiBrixAsli).toFixed(1),
@@ -150,7 +153,8 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
       const matchLahan = filters.nama_lahan === '' || row.nama_lahan === filters.nama_lahan;
       const matchBlok = filters.nama_blok === '' || row.nama_blok === filters.nama_blok;
       const matchPetugas = filters.nama_petugas === '' || row.nama_petugas === filters.nama_petugas; 
-      return matchLahan && matchBlok && matchPetugas;
+      const matchJenisTebu = filters.jenis_tebu === '' || row.jenis_tebu === filters.jenis_tebu; // 🌟 Filter Jenis Tebu
+      return matchLahan && matchBlok && matchPetugas && matchJenisTebu;
     });
 
     if (filters.sort_tanggal) {
@@ -190,6 +194,13 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })), 
   [tableData]);
 
+  // Data unik untuk pilihan dropdown filter Jenis Tebu
+  const uniqueJenisTebu = useMemo(() => 
+    [...new Set(tableData.map(d => d.jenis_tebu))]
+      .filter(n => n !== '-')
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })), 
+  [tableData]);
+
   const handleFilterChange = (e, column) => {
     setFilters(prev => ({ ...prev, [column]: e.target.value }));
   };
@@ -203,7 +214,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-bold text-gray-700 flex items-center gap-2 text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-blue-500">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28-2.28 5.941" />
               </svg>
               Tren Kenaikan Brix
             </h3>
@@ -292,6 +303,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
               <tr>
                 <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top text-center">No</th>
                 
+                {/* Kolom Nama Lahan */}
                 <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[160px] text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
@@ -307,6 +319,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   </select>
                 </th>
                 
+                {/* Kolom Petak */}
                 <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[160px] text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
@@ -322,6 +335,23 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   </select>
                 </th>
 
+                {/* Kolom Jenis Tebu */}
+                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[160px] text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m9-9H3" />
+                    </svg>
+                    Jenis Tebu
+                  </div>
+                  <select value={filters.jenis_tebu} onChange={(e) => handleFilterChange(e, 'jenis_tebu')} className="w-full p-1.5 pr-8 text-xs font-normal border border-gray-300 rounded outline-none focus:border-blue-400 bg-white cursor-pointer hover:bg-gray-50 transition-colors text-center">
+                    <option value="">Semua Jenis</option>
+                    {uniqueJenisTebu.map(jenis => (
+                      <option key={jenis} value={jenis}>{jenis}</option>
+                    ))}
+                  </select>
+                </th>
+
+                {/* Kolom Petugas */}
                 <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[170px] text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
@@ -337,6 +367,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   </select>
                 </th>
                 
+                {/* Kolom Latitude */}
                 <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
@@ -348,6 +379,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   <div className="h-[28px]"></div>
                 </th>
                 
+                {/* Kolom Longitude */}
                 <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
@@ -359,6 +391,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   <div className="h-[28px]"></div>
                 </th>
                 
+                {/* Kolom Nilai Brix */}
                 <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[150px] text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
@@ -373,6 +406,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   </select>
                 </th>
                 
+                {/* Kolom Waktu Pengukuran */}
                 <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[170px] text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
@@ -396,6 +430,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                     <td className="px-4 py-3 font-medium text-gray-500 text-center">{row.no}</td>
                     <td className="px-4 py-3 text-center">{row.nama_lahan}</td>
                     <td className="px-4 py-3 font-medium text-blue-600 text-center">{row.nama_blok}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-800 text-center">{row.jenis_tebu}</td>
                     <td className="px-4 py-3 font-bold text-gray-700 text-center">{row.nama_petugas}</td>
                     <td className="px-4 py-3 text-gray-500 font-mono text-xs text-center">{row.latitude}</td>
                     <td className="px-4 py-3 text-gray-500 font-mono text-xs text-center">{row.longitude}</td>
@@ -409,7 +444,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="px-4 py-8 text-center text-gray-400 italic">
+                  <td colSpan="9" className="px-4 py-8 text-center text-gray-400 italic">
                     Tidak ada data sampel yang sesuai dengan filter.
                   </td>
                 </tr>
