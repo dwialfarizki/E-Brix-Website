@@ -1,18 +1,46 @@
-import React, { useMemo, useState } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useMemo, useState } from 'react';
+import { 
+  AreaChart, 
+  Area, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  Cell 
+} from 'recharts';
+
+const CustomChartTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const val = payload[0].value;
+    const color = val > 19 ? '#ef4444' : val >= 15 ? '#f59e0b' : '#10b981';
+    return (
+      <div className="bg-[#091a13]/95 text-white p-3 rounded-xl shadow-xl border border-emerald-500/30 backdrop-blur-md font-sans text-xs">
+        <p className="text-[10px] font-mono text-emerald-400 font-bold mb-1">{label}</p>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[10px] text-slate-300">Nilai Brix:</span>
+          <span className="font-mono text-base font-extrabold text-white" style={{ color }}>
+            {val}°Bx
+          </span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function AnalysisData({ sampelData, blokData, selectedLahan, selectedBlok, lahanData = [] }) {
-  // PERBAIKAN: Default filter diatur agar langsung menampilkan data Terbaru (desc)
   const [filters, setFilters] = useState({
     nama_lahan: '',
     nama_blok: '',
     nama_petugas: '', 
-    jenis_tebu: '', // TAMBAHAN: State filter untuk jenis tebu
+    jenis_tebu: '',
     sort_brix: '',
     sort_tanggal: 'desc' 
   });
 
-  // State Filter Rentang Tanggal untuk Grafik Tren
   const [trendDateRange, setTrendDateRange] = useState({
     start: '',
     end: ''
@@ -84,7 +112,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
     }).sort((a, b) => a._sortDate - b._sortDate);
   }, [sampelData, selectedLahan, selectedBlok, blokData, trendDateRange]);
 
-  // --- 📌 LOGIKA GRAFIK BLOK ---
+  // LOGIKA GRAFIK BLOK
   const chartBlokData = useMemo(() => {
     let blokAktif = blokData;
 
@@ -122,8 +150,6 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
 
       const nilaiBrixAsli = sampel.properties?.nilai_brix || sampel.nilai_brix || 0;
       const namaPetaniAsli = sampel.properties?.nama_petani || sampel.nama_petani || '-';
-      
-      // Ekstraksi data jenis_tebu dari backend
       const jenisTebuAsli = sampel.properties?.jenis_tebu || sampel.jenis_tebu || '-';
 
       const waktuMentah = sampel.properties?.waktu_pengukuran || sampel.properties?.created_at || sampel.waktu_pengukuran;
@@ -134,7 +160,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
         nama_lahan: lahan ? (lahan.properties?.nama_lahan || lahan.nama_lahan) : '-',
         nama_blok: blok ? (blok.properties?.nama_blok || blok.nama_blok) : '-',
         nama_petugas: namaPetaniAsli, 
-        jenis_tebu: jenisTebuAsli, // Dimasukkan ke objek row tabel
+        jenis_tebu: jenisTebuAsli,
         latitude: parseFloat(sampel.properties?.latitude || sampel.geometry?.coordinates?.[1] || sampel.latitude || 0).toFixed(6),
         longitude: parseFloat(sampel.properties?.longitude || sampel.geometry?.coordinates?.[0] || sampel.longitude || 0).toFixed(6),
         nilai_brix: parseFloat(nilaiBrixAsli).toFixed(1),
@@ -153,7 +179,7 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
       const matchLahan = filters.nama_lahan === '' || row.nama_lahan === filters.nama_lahan;
       const matchBlok = filters.nama_blok === '' || row.nama_blok === filters.nama_blok;
       const matchPetugas = filters.nama_petugas === '' || row.nama_petugas === filters.nama_petugas; 
-      const matchJenisTebu = filters.jenis_tebu === '' || row.jenis_tebu === filters.jenis_tebu; // 🌟 Filter Jenis Tebu
+      const matchJenisTebu = filters.jenis_tebu === '' || row.jenis_tebu === filters.jenis_tebu;
       return matchLahan && matchBlok && matchPetugas && matchJenisTebu;
     });
 
@@ -194,7 +220,6 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })), 
   [tableData]);
 
-  // Data unik untuk pilihan dropdown filter Jenis Tebu
   const uniqueJenisTebu = useMemo(() => 
     [...new Set(tableData.map(d => d.jenis_tebu))]
       .filter(n => n !== '-')
@@ -208,71 +233,132 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
   return (
     <div className="flex flex-col gap-6 w-full h-full">
 
-      <div className="grid grid-cols-2 gap-6 min-h-[350px]">
-        {/* ======================= CHART TREN ======================= */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-gray-700 flex items-center gap-2 text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-blue-500">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28-2.28 5.941" />
-              </svg>
-              Tren Kenaikan Brix
-            </h3>
-            <div className="flex items-center gap-2">
-                <input 
-                  type="date" 
-                  value={trendDateRange.start} 
-                  onChange={e => setTrendDateRange(prev => ({...prev, start: e.target.value}))} 
-                  className="text-[10px] border border-gray-300 rounded p-1.5 outline-none text-gray-600 focus:border-blue-400 cursor-pointer" 
-                  title="Tanggal Mulai"
-                />
-                <span className="text-gray-400 text-[10px] font-bold">-</span>
-                <input 
-                  type="date" 
-                  value={trendDateRange.end} 
-                  onChange={e => setTrendDateRange(prev => ({...prev, end: e.target.value}))} 
-                  className="text-[10px] border border-gray-300 rounded p-1.5 outline-none text-gray-600 focus:border-blue-400 cursor-pointer" 
-                  title="Tanggal Akhir"
-                />
-                {(trendDateRange.start || trendDateRange.end) && (
-                    <button 
-                      onClick={() => setTrendDateRange({start: '', end: ''})} 
-                      className="text-[10px] bg-red-50 text-red-500 hover:bg-red-100 px-2 py-1.5 rounded font-bold transition"
-                    >
-                      Reset
-                    </button>
-                )}
+      {/* ======================= CHART ROW ======================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[380px]">
+        
+        {/* CHART 1: TREN WAKTU DENGAN AREA GRADIENT */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col relative overflow-hidden">
+          
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">
+                  Kurva Dinamika Kenaikan Brix
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Pergerakan akumulasi sukrosa sepanjang periode sampling
+                </p>
+              </div>
+            </div>
+
+            {/* Date Filters */}
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              <input 
+                type="date" 
+                value={trendDateRange.start} 
+                onChange={e => setTrendDateRange(prev => ({...prev, start: e.target.value}))} 
+                className="text-[10px] h-8 border border-slate-200 rounded-lg px-2 text-slate-700 bg-slate-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer" 
+                title="Tanggal Mulai"
+              />
+              <span className="text-slate-400 font-bold">-</span>
+              <input 
+                type="date" 
+                value={trendDateRange.end} 
+                onChange={e => setTrendDateRange(prev => ({...prev, end: e.target.value}))} 
+                className="text-[10px] h-8 border border-slate-200 rounded-lg px-2 text-slate-700 bg-slate-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer" 
+                title="Tanggal Akhir"
+              />
+              {(trendDateRange.start || trendDateRange.end) && (
+                <button 
+                  onClick={() => setTrendDateRange({start: '', end: ''})} 
+                  className="h-8 px-2 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition"
+                >
+                  Reset
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex-1 min-h-[250px]">
+
+          <div className="flex-1 min-h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartTrenData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="tanggal" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Line type="monotone" dataKey="brix" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6 }} />
-              </LineChart>
+              <AreaChart data={chartTrenData} margin={{ top: 10, right: 15, bottom: 5, left: -10 }}>
+                <defs>
+                  <linearGradient id="brixAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="tanggal" 
+                  tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
+                  tickLine={false} 
+                  axisLine={{ stroke: '#e2e8f0' }} 
+                />
+                <YAxis 
+                  tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  unit="°"
+                />
+                <Tooltip content={<CustomChartTooltip />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="brix" 
+                  stroke="#10b981" 
+                  strokeWidth={2.5} 
+                  fillOpacity={1} 
+                  fill="url(#brixAreaGradient)" 
+                  dot={{ fill: '#059669', strokeWidth: 2, r: 3 }} 
+                  activeDot={{ r: 6, fill: '#10b981', stroke: '#ffffff', strokeWidth: 2 }} 
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* ======================= CHART BLOK ======================= */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-          <h3 className="font-bold text-gray-700 mb-6 flex items-center gap-2 text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-orange-500">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-            </svg>
-            Status Rata-rata per Petak
-          </h3>
-          <div className="flex-1 min-h-[250px]">
+        {/* CHART 2: STATUS RATA-RATA PETAK */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col relative overflow-hidden">
+          
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">
+                Distribusi Kematangan Tiap Petak
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Tolak ukur rata-rata Brix petak untuk penentuan jadwal tebang
+              </p>
+            </div>
+          </div>
+
+          <div className="flex-1 min-h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartBlokData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="nama_blok" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={{ stroke: '#e5e7eb' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
-                <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Bar dataKey="rata_brix" radius={[4, 4, 0, 0]}>
+              <BarChart data={chartBlokData} margin={{ top: 10, right: 15, bottom: 5, left: -10 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="nama_blok" 
+                  tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
+                  tickLine={false} 
+                  axisLine={{ stroke: '#e2e8f0' }} 
+                />
+                <YAxis 
+                  tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  unit="°"
+                />
+                <Tooltip content={<CustomChartTooltip />} />
+                <Bar dataKey="rata_brix" radius={[6, 6, 0, 0]}>
                   {chartBlokData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getBrixColor(entry.rata_brix)} />
                   ))}
@@ -281,37 +367,52 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
             </ResponsiveContainer>
           </div>
         </div>
+
       </div>
 
-      {/* ======================= TABEL DATA ======================= */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col flex-1 min-h-[400px] overflow-hidden">
-        <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-          <h3 className="font-bold text-gray-700 flex items-center gap-2 text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-green-600">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-            </svg>
-            Rekapitulasi Data Sampel Brix
-          </h3>
-          <span className="text-xs font-medium text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-            Total Data: {filteredTableData.length}
-          </span>
+      {/* ======================= TABEL DATA TELEMETRI ======================= */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 flex flex-col flex-1 min-h-[420px] overflow-hidden">
+        
+        {/* Table Header Bar */}
+        <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">
+                Log Buku Besar Pengukuran Brix Lapangan
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Daftar terperinci observasi refraktometer di setiap titik koordinat
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200 px-3 py-1 rounded-xl shadow-xs">
+              TOTAL: {filteredTableData.length} RECORD
+            </span>
+          </div>
         </div>
         
+        {/* Table Viewport */}
         <div className="overflow-x-auto flex-1">
-          <table className="w-full text-sm text-center text-gray-600">
-            <thead className="text-xs text-gray-500 uppercase bg-gray-50 sticky top-0 z-10 shadow-sm">
+          <table className="w-full text-xs text-left text-slate-600">
+            <thead className="text-[11px] text-slate-600 uppercase bg-slate-50/90 sticky top-0 z-10 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top text-center">No</th>
+                <th className="px-4 py-3 font-mono font-bold text-center w-12">#</th>
                 
-                {/* Kolom Nama Lahan */}
-                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[160px] text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
-                    </svg>
-                    Nama Lahan
-                  </div>
-                  <select value={filters.nama_lahan} onChange={(e) => handleFilterChange(e, 'nama_lahan')} className="w-full p-1.5 pr-8 text-xs font-normal border border-gray-300 rounded outline-none focus:border-blue-400 bg-white cursor-pointer hover:bg-gray-50 transition-colors text-center">
+                {/* Lahan */}
+                <th className="px-4 py-3 font-bold min-w-[170px]">
+                  <div className="mb-1.5 flex items-center gap-1 text-slate-500">Lahan Induk</div>
+                  <select 
+                    value={filters.nama_lahan} 
+                    onChange={(e) => handleFilterChange(e, 'nama_lahan')} 
+                    className="w-full h-8 px-2 text-xs font-medium border border-slate-200 rounded-lg outline-none bg-white focus:ring-1 focus:ring-emerald-500"
+                  >
                     <option value="">Semua Lahan</option>
                     {uniqueLahan.map(lahan => (
                       <option key={lahan} value={lahan}>{lahan}</option>
@@ -319,15 +420,14 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   </select>
                 </th>
                 
-                {/* Kolom Petak */}
-                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[160px] text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-                    </svg>
-                    Petak
-                  </div>
-                  <select value={filters.nama_blok} onChange={(e) => handleFilterChange(e, 'nama_blok')} className="w-full p-1.5 pr-8 text-xs font-normal border border-gray-300 rounded outline-none focus:border-blue-400 bg-white cursor-pointer hover:bg-gray-50 transition-colors text-center">
+                {/* Petak */}
+                <th className="px-4 py-3 font-bold min-w-[170px]">
+                  <div className="mb-1.5 flex items-center gap-1 text-slate-500">Petak Blok</div>
+                  <select 
+                    value={filters.nama_blok} 
+                    onChange={(e) => handleFilterChange(e, 'nama_blok')} 
+                    className="w-full h-8 px-2 text-xs font-medium border border-slate-200 rounded-lg outline-none bg-white focus:ring-1 focus:ring-emerald-500"
+                  >
                     <option value="">Semua Petak</option>
                     {uniqueBlok.map(blok => (
                       <option key={blok} value={blok}>{blok}</option>
@@ -335,15 +435,14 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   </select>
                 </th>
 
-                {/* Kolom Jenis Tebu */}
-                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[160px] text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m9-9H3" />
-                    </svg>
-                    Jenis Tebu
-                  </div>
-                  <select value={filters.jenis_tebu} onChange={(e) => handleFilterChange(e, 'jenis_tebu')} className="w-full p-1.5 pr-8 text-xs font-normal border border-gray-300 rounded outline-none focus:border-blue-400 bg-white cursor-pointer hover:bg-gray-50 transition-colors text-center">
+                {/* Jenis Tebu */}
+                <th className="px-4 py-3 font-bold min-w-[160px]">
+                  <div className="mb-1.5 flex items-center gap-1 text-slate-500">Jenis Tebu</div>
+                  <select 
+                    value={filters.jenis_tebu} 
+                    onChange={(e) => handleFilterChange(e, 'jenis_tebu')} 
+                    className="w-full h-8 px-2 text-xs font-medium border border-slate-200 rounded-lg outline-none bg-white focus:ring-1 focus:ring-emerald-500"
+                  >
                     <option value="">Semua Jenis</option>
                     {uniqueJenisTebu.map(jenis => (
                       <option key={jenis} value={jenis}>{jenis}</option>
@@ -351,15 +450,14 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   </select>
                 </th>
 
-                {/* Kolom Petugas */}
-                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[170px] text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                    </svg>
-                    Petugas
-                  </div>
-                  <select value={filters.nama_petugas} onChange={(e) => handleFilterChange(e, 'nama_petugas')} className="w-full p-1.5 pr-8 text-xs font-normal border border-gray-300 rounded outline-none focus:border-blue-400 bg-white cursor-pointer hover:bg-gray-50 transition-colors text-center">
+                {/* Petugas */}
+                <th className="px-4 py-3 font-bold min-w-[160px]">
+                  <div className="mb-1.5 flex items-center gap-1 text-slate-500">Petugas Surveyor</div>
+                  <select 
+                    value={filters.nama_petugas} 
+                    onChange={(e) => handleFilterChange(e, 'nama_petugas')} 
+                    className="w-full h-8 px-2 text-xs font-medium border border-slate-200 rounded-lg outline-none bg-white focus:ring-1 focus:ring-emerald-500"
+                  >
                     <option value="">Semua Petugas</option>
                     {uniquePetugas.map(petugas => (
                       <option key={petugas} value={petugas}>{petugas}</option>
@@ -367,91 +465,97 @@ export default function AnalysisData({ sampelData, blokData, selectedLahan, sele
                   </select>
                 </th>
                 
-                {/* Kolom Latitude */}
-                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                    </svg>
-                    Latitude
-                  </div>
-                  <div className="h-[28px]"></div>
+                {/* Spasial Koordinat */}
+                <th className="px-4 py-3 font-mono font-bold text-center min-w-[180px]">
+                  <div className="mb-1.5 text-slate-500">Koordinat (Lat, Lng)</div>
+                  <div className="h-8 flex items-center justify-center text-[10px] text-slate-400">WGS84 EPSG:4326</div>
                 </th>
                 
-                {/* Kolom Longitude */}
-                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                    </svg>
-                    Longitude
-                  </div>
-                  <div className="h-[28px]"></div>
-                </th>
-                
-                {/* Kolom Nilai Brix */}
-                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[150px] text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-                    </svg>
-                    Nilai Brix
-                  </div>
-                  <select value={filters.sort_brix} onChange={(e) => handleFilterChange(e, 'sort_brix')} className="w-full p-1.5 pr-8 text-xs font-normal border border-gray-300 rounded outline-none focus:border-blue-400 bg-white cursor-pointer hover:bg-gray-50 transition-colors text-center">
+                {/* Nilai Brix */}
+                <th className="px-4 py-3 font-bold min-w-[140px] text-center">
+                  <div className="mb-1.5 text-slate-500">Nilai Brix (°Bx)</div>
+                  <select 
+                    value={filters.sort_brix} 
+                    onChange={(e) => handleFilterChange(e, 'sort_brix')} 
+                    className="w-full h-8 px-2 text-xs font-medium border border-slate-200 rounded-lg outline-none bg-white focus:ring-1 focus:ring-emerald-500"
+                  >
                     <option value="">Urutkan</option>
-                    <option value="asc">Terkecil (ASC)</option>
-                    <option value="desc">Terbesar (DESC)</option>
+                    <option value="asc">Terendah (Asc)</option>
+                    <option value="desc">Tertinggi (Desc)</option>
                   </select>
                 </th>
                 
-                {/* Kolom Waktu Pengukuran */}
-                <th className="px-4 py-3 font-semibold border-b border-gray-200 align-top min-w-[170px] text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Waktu Pengukuran
-                  </div>
-                  <select value={filters.sort_tanggal} onChange={(e) => handleFilterChange(e, 'sort_tanggal')} className="w-full p-1.5 pr-8 text-xs font-normal border border-gray-300 rounded outline-none focus:border-blue-400 bg-white cursor-pointer hover:bg-gray-50 transition-colors text-center">
-                    <option value="">Urutkan</option>
-                    <option value="asc">Terlama (ASC)</option>
-                    <option value="desc">Terbaru (DESC)</option>
+                {/* Timestamp */}
+                <th className="px-4 py-3 font-bold min-w-[160px]">
+                  <div className="mb-1.5 text-slate-500">Waktu Observasi</div>
+                  <select 
+                    value={filters.sort_tanggal} 
+                    onChange={(e) => handleFilterChange(e, 'sort_tanggal')} 
+                    className="w-full h-8 px-2 text-xs font-medium border border-slate-200 rounded-lg outline-none bg-white focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="desc">Terbaru (Desc)</option>
+                    <option value="asc">Terlama (Asc)</option>
                   </select>
                 </th>
               </tr>
             </thead>
             
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {filteredTableData.length > 0 ? (
                 filteredTableData.map((row) => (
-                  <tr key={row.no} className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-500 text-center">{row.no}</td>
-                    <td className="px-4 py-3 text-center">{row.nama_lahan}</td>
-                    <td className="px-4 py-3 font-medium text-blue-600 text-center">{row.nama_blok}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-800 text-center">{row.jenis_tebu}</td>
-                    <td className="px-4 py-3 font-bold text-gray-700 text-center">{row.nama_petugas}</td>
-                    <td className="px-4 py-3 text-gray-500 font-mono text-xs text-center">{row.latitude}</td>
-                    <td className="px-4 py-3 text-gray-500 font-mono text-xs text-center">{row.longitude}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-bold text-white`} style={{ backgroundColor: getBrixColor(row.nilai_brix) }}>
-                        {row.nilai_brix}°
+                  <tr key={row.no} className="hover:bg-emerald-50/30 transition-colors">
+                    <td className="px-4 py-3.5 font-mono text-center text-slate-400 font-semibold">{row.no}</td>
+                    <td className="px-4 py-3.5 font-semibold text-slate-800">{row.nama_lahan}</td>
+                    <td className="px-4 py-3.5">
+                      <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/50">
+                        {row.nama_blok}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs text-center">{row.tanggal}</td>
+                    <td className="px-4 py-3.5 font-medium text-slate-700">
+                      {row.jenis_tebu !== '-' ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          {row.jenis_tebu}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">Standar</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 font-medium text-slate-800">
+                      {row.nama_petugas}
+                    </td>
+                    <td className="px-4 py-3.5 text-center font-mono text-[11px] text-slate-500">
+                      {row.latitude}, {row.longitude}
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      <span 
+                        className="inline-flex items-center justify-center font-mono font-bold text-xs px-2.5 py-1 rounded-md text-white shadow-xs" 
+                        style={{ backgroundColor: getBrixColor(parseFloat(row.nilai_brix)) }}
+                      >
+                        {row.nilai_brix}°Bx
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 font-mono text-[11px] text-slate-500">
+                      {row.tanggal}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="9" className="px-4 py-8 text-center text-gray-400 italic">
-                    Tidak ada data sampel yang sesuai dengan filter.
+                  <td colSpan="8" className="px-6 py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <svg className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="font-medium text-xs">Tidak ada data sampel yang cocok dengan filter aktif.</span>
+                    </div>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
       </div>
 
     </div>

@@ -9,7 +9,7 @@ import { API_BASE_URL, MAPBOX_TOKEN } from '../config';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
-export default function ManageLand({ blokData, lahanData, fetchSemuaData, setActiveTab }) {
+export default function ManageLand({ blokData, lahanData, fetchSemuaData, _setActiveTab }) {
   const drawMapContainer = useRef(null);
   const drawMap = useRef(null);
   const hoverPopupRef = useRef(null); 
@@ -91,7 +91,7 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
         alert("Silakan pilih Lahan Induk yang ingin dihapus terlebih dahulu.");
         return;
     }
-    const isConfirmed = window.confirm("PERINGATAN \nYakin ingin menghapus Lahan Induk ini? SEMUA Blok Lahan dan Titik Brix di dalamnya akan ikut terhapus permanen!");
+    const isConfirmed = window.confirm("PERINGATAN!\nYakin ingin menghapus Lahan Induk ini? SEMUA Blok Lahan dan Titik Brix di dalamnya akan ikut terhapus permanen!");
     if (isConfirmed) {
         try {
             await axios.delete(`${API_BASE_URL}/lahan/${id_lahan}`);
@@ -129,7 +129,8 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
       container: drawMapContainer.current,
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
       center: [108.4312, -6.7111], 
-      zoom: 16
+      zoom: 16,
+      attributionControl: false
     });
 
     drawControl.current = new MapboxDraw({
@@ -137,7 +138,7 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
       controls: { polygon: true, trash: true },
       defaultMode: 'draw_polygon'
     });
-    drawMap.current.addControl(drawControl.current);
+    drawMap.current.addControl(drawControl.current, 'top-right');
 
     const updateArea = () => {
       if (!drawControl.current) return;
@@ -157,11 +158,11 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
 
     drawMap.current.on('load', () => {
       drawMap.current.addSource('ref-lahan-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      drawMap.current.addLayer({ id: 'ref-lahan-outline', type: 'line', source: 'ref-lahan-source', paint: { 'line-color': '#f97316', 'line-width': 3 } });
+      drawMap.current.addLayer({ id: 'ref-lahan-outline', type: 'line', source: 'ref-lahan-source', paint: { 'line-color': '#f59e0b', 'line-width': 3 } });
 
       drawMap.current.addSource('ref-blok-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      drawMap.current.addLayer({ id: 'ref-blok-fill', type: 'fill', source: 'ref-blok-source', paint: { 'fill-color': '#3b82f6', 'fill-opacity': 0.15 } });
-      drawMap.current.addLayer({ id: 'ref-blok-outline', type: 'line', source: 'ref-blok-source', paint: { 'line-color': '#60a5fa', 'line-width': 1.5, 'line-dasharray': [2, 2] } });
+      drawMap.current.addLayer({ id: 'ref-blok-fill', type: 'fill', source: 'ref-blok-source', paint: { 'fill-color': '#10b981', 'fill-opacity': 0.18 } });
+      drawMap.current.addLayer({ id: 'ref-blok-outline', type: 'line', source: 'ref-blok-source', paint: { 'line-color': '#34d399', 'line-width': 2, 'line-dasharray': [3, 2] } });
       
       hoverPopupRef.current = new mapboxgl.Popup({
           closeButton: false,
@@ -174,12 +175,12 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
           drawMap.current.getCanvas().style.cursor = 'pointer';
 
           if (e.features.length > 0) {
-              const namaBlok = e.features[0].properties?.nama_blok || 'Blok Tanpa Nama';
+              const namaBlok = e.features[0].properties?.nama_blok || 'Petak Tanpa Nama';
               const coordinates = e.lngLat;
 
               hoverPopupRef.current
                   .setLngLat(coordinates)
-                  .setHTML(`<div class="p-1 px-2 font-bold text-gray-800 bg-white/90 backdrop-blur-sm rounded text-xs shadow-md border border-gray-100">${namaBlok}</div>`)
+                  .setHTML(`<div class="px-2.5 py-1 font-mono text-xs font-bold text-slate-800 bg-white/95 backdrop-blur-md rounded shadow border border-emerald-500/30 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>${namaBlok}</div>`)
                   .addTo(drawMap.current);
           }
       });
@@ -361,7 +362,7 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
           drawControl.current.deleteAll();
       }
 
-    } catch (error) {
+    } catch (_error) {
       alert("Penyimpanan gagal. Cek validitas struktur format GeoJSON atau koneksi server.");
     } finally {
       setIsSubmitting(false);
@@ -370,175 +371,262 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, setAct
 
   return (
     <div className="flex flex-col flex-1 gap-6">
-      <div className="flex items-center justify-between border-b pb-4">
-        <div>
-          <h3 className="text-xl font-bold text-gray-800">Manajemen Pemetaan Wilayah</h3>
-          <p className="text-sm text-gray-500 mt-1">Gunakan peta spasial interaktif untuk meregistrasikan koordinat area ke sistem.</p>
+      
+      {/* HEADER BAR DENGAN MODE SWITCHER */}
+      <div className="flex flex-wrap items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-200/90 gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">
+                Digitasi CAD Spasial & Pemetaan Blok
+              </h3>
+              <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+                TURF.JS GEODESIC
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Gunakan perangkat digitasi polygon interaktif atau import shapefile GIS (.zip)
+            </p>
+          </div>
         </div>
-        <div className="bg-gray-200/60 p-1.5 rounded-xl flex gap-1 border">
-          <button onClick={() => setMode('tambah_blok')} className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-bold transition-all ${mode === 'tambah_blok' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-            </svg>
-            Tambah Petak 
+
+        {/* Mode Selector Pill */}
+        <div className="bg-slate-100 p-1.5 rounded-xl flex gap-1 border border-slate-200">
+          <button 
+            type="button"
+            onClick={() => setMode('tambah_blok')} 
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all ${
+              mode === 'tambah_blok' 
+                ? 'bg-white text-emerald-800 shadow-sm border border-slate-200/60 font-extrabold' 
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${mode === 'tambah_blok' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+            Petak Blok Kebun
           </button>
-          <button onClick={() => setMode('tambah_lahan')} className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-bold transition-all ${mode === 'tambah_lahan' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-            </svg>
-            Tambah Lahan Induk
+          <button 
+            type="button"
+            onClick={() => setMode('tambah_lahan')} 
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all ${
+              mode === 'tambah_lahan' 
+                ? 'bg-white text-amber-800 shadow-sm border border-slate-200/60 font-extrabold' 
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${mode === 'tambah_lahan' ? 'bg-amber-500' : 'bg-slate-400'}`}></span>
+            Lahan Induk (Estate)
           </button>
         </div>
       </div>
 
-      <div className="flex gap-6 flex-1 min-h-[520px]">
-        <div className="flex-1 bg-white p-2 rounded-xl shadow-lg border border-gray-100 relative overflow-hidden">
-          <div ref={drawMapContainer} className="absolute inset-0 w-full h-full rounded-lg" />
+      {/* WORKSPACE DUA KOLOM: MAP CANVAS + CAD FORM */}
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-[580px]">
+        
+        {/* SISI KIRI: MAP VIEWPORT CAD */}
+        <div className="flex-1 bg-white p-2 rounded-2xl shadow-sm border border-slate-200/90 relative overflow-hidden min-h-[420px]">
+          <div ref={drawMapContainer} className="absolute inset-0 w-full h-full rounded-xl overflow-hidden" />
+          
+          {/* Overlay Hint Top Left */}
+          <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-lg border border-slate-200/90 text-xs flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="font-mono text-[11px] text-slate-700">
+              {mode === 'tambah_blok' ? 'MODE: Digitasi Poligon Blok Petak' : 'MODE: Digitasi Batas Lahan Induk'}
+            </span>
+          </div>
         </div>
 
-        <div className="w-1/3 min-w-[320px] bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col justify-between overflow-y-auto">
+        {/* SISI KANAN: CAD FORM & DANGER ZONE */}
+        <div className="w-full lg:w-96 bg-white p-6 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col justify-between overflow-y-auto gap-6 shrink-0">
           
-          <form onSubmit={handleSimpanData} className="space-y-5">
-            <div className="space-y-4">
-              <h4 className="font-bold text-sm text-gray-400 uppercase tracking-wider">
-                {mode === 'tambah_lahan' ? 'Formulir Lahan Induk' : 'Formulir Petak'}
-              </h4>
-
-              {mode === 'tambah_blok' && (
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-2 uppercase">Induk Lahan Utama</label>
-                  <select required value={formData.id_lahan} onChange={(e) => setFormData({...formData, id_lahan: e.target.value})} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-sm">
-                    <option value="">-- Pilih Lahan --</option>
-                    {lahanData.map(l => (
-                      <option key={l.properties.id_lahan} value={l.properties.id_lahan}>{l.properties.nama_lahan}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-2 uppercase">
-                  {mode === 'tambah_lahan' ? 'Nama Lahan Utama' : 'Nama/Kode Petak'}
-                </label>
-                <input type="text" required placeholder={mode === 'tambah_lahan' ? "Contoh: Perkebunan Palimanan Barat" : "Contoh: A"} value={formData.nama} onChange={(e) => setFormData({...formData, nama: e.target.value})} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm outline-none" />
-              </div>
-
-              <div className="flex flex-col">
-                <div className="flex justify-between items-center mb-2">
-                    <label className="block text-xs font-bold text-gray-600 uppercase">Geometri Koordinat Spasial</label>
-                    <button 
-                        type="button" 
-                        onClick={() => fileInputRef.current?.click()} 
-                        className="flex items-center gap-1.5 text-[10px] font-bold bg-green-50 text-green-600 px-2 py-1 rounded border border-green-200 hover:bg-green-100 transition"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-                        </svg>
-                        Upload SHP (.zip)
-                    </button>
-                    <input 
-                        type="file" 
-                        accept=".zip" 
-                        ref={fileInputRef} 
-                        style={{ display: 'none' }} 
-                        onChange={handleUploadSHP} 
-                    />
-                </div>
-                <textarea required readOnly value={formData.geojson} className="w-full h-32 border border-gray-200 p-3 rounded-lg font-mono text-[11px] bg-gray-50/80 text-gray-500 outline-none resize-none" placeholder="Gambar batas area di peta atau upload file Shapefile (.zip)..." />
-              </div>
+          <form onSubmit={handleSimpanData} className="space-y-4">
+            
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-slate-400">
+                {mode === 'tambah_lahan' ? 'PROPERTI LAHAN INDUK' : 'PROPERTI BLOK PETAK'}
+              </span>
+              <span className={`text-[9px] font-mono px-2 py-0.5 rounded font-bold ${
+                mode === 'tambah_lahan' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+              }`}>
+                {mode === 'tambah_lahan' ? 'ESTATE' : 'BLOCK'}
+              </span>
             </div>
 
-            <button type="submit" disabled={isSubmitting} className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-lg font-bold text-white shadow-md transition-all ${mode === 'tambah_lahan' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            {mode === 'tambah_blok' && (
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+                  Induk Lahan Utama (Estate)
+                </label>
+                <select 
+                  required 
+                  value={formData.id_lahan} 
+                  onChange={(e) => setFormData({...formData, id_lahan: e.target.value})} 
+                  className="w-full h-10 px-3 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                >
+                  <option value="">-- Pilih Induk Lahan --</option>
+                  {lahanData.map(l => (
+                    <option key={l.properties.id_lahan} value={l.properties.id_lahan}>
+                      {l.properties.nama_lahan}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[10px] font-mono font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+                {mode === 'tambah_lahan' ? 'Nama Lahan Utama' : 'Nama / Kode Blok Petak'}
+              </label>
+              <input 
+                type="text" 
+                required 
+                placeholder={mode === 'tambah_lahan' ? "Contoh: Perkebunan Jatitujuh" : "Contoh: Blok A-01"} 
+                value={formData.nama} 
+                onChange={(e) => setFormData({...formData, nama: e.target.value})} 
+                className="w-full h-10 px-3 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" 
+              />
+            </div>
+
+            {/* Geometri Koordinat & Upload SHP */}
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider">
+                  Geometri Spasial GeoJSON
+                </label>
+                <button 
+                  type="button" 
+                  onClick={() => fileInputRef.current?.click()} 
+                  className="flex items-center gap-1.5 text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition shadow-xs"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  Import SHP (.zip)
+                </button>
+                <input 
+                  type="file" 
+                  accept=".zip" 
+                  ref={fileInputRef} 
+                  style={{ display: 'none' }} 
+                  onChange={handleUploadSHP} 
+                />
+              </div>
+
+              <textarea 
+                required 
+                readOnly 
+                value={formData.geojson} 
+                className="w-full h-28 border border-slate-200 p-3 rounded-xl font-mono text-[10px] bg-slate-50 text-slate-600 outline-none resize-none" 
+                placeholder="Gambar poligon area pada peta atau import file Shapefile (.zip) ESRI..." 
+              />
+            </div>
+
+            {/* Action Submit */}
+            <button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className={`w-full h-11 rounded-xl font-mono text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
+                mode === 'tambah_lahan' 
+                  ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' 
+                  : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              {isSubmitting ? 'Menyimpan Data...' : mode === 'tambah_lahan' ? 'Registrasi Lahan Induk' : 'Daftarkan Petak Baru'}
+              {isSubmitting 
+                ? 'Menyimpan Geometri...' 
+                : mode === 'tambah_lahan' ? 'Registrasi Lahan Induk' : 'Daftarkan Blok Petak'}
             </button>
           </form>
 
-          <div className="mt-8 border-t-2 border-dashed border-red-200 pt-6">
-              <h3 className="text-[11px] font-extrabold text-red-500 mb-4 uppercase tracking-wider flex items-center gap-1.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                  </svg>
-                  Zona Hapus Data
-              </h3>
+          {/* DANGER ZONE (ZONA HAPUS DATA) */}
+          <div className="border-t border-slate-100 pt-5 space-y-3">
+            <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-rose-600 uppercase tracking-wider">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Zona Destruktif Hapus
+            </div>
+
+            <div className="space-y-2 text-xs">
               
-              <div className="flex flex-col gap-3">
-                  <div className="bg-red-50/50 p-3 rounded-lg border border-red-100 flex flex-col gap-2">
-                      <label className="block text-[10px] font-bold text-gray-600 uppercase">Hapus Blok Lahan</label>
-                      <div className="flex gap-2">
-                          <select 
-                              id="select-delete-blok"
-                              className="flex-1 p-2 text-xs border border-gray-300 rounded outline-none focus:border-red-500 bg-white"
-                          >
-                              <option value="">-- Pilih Petak --</option>
-                              {/* 🌟 PERBAIKAN: Grouping dan Sorting diterapkan di Dropdown Hapus Blok */}
-                              {Array.isArray(lahanData) && lahanData.map(lahan => {
-                                  const idLahan = String(lahan.properties?.id_lahan || lahan.id_lahan);
-                                  const namaLahan = lahan.properties?.nama_lahan || lahan.nama_lahan;
-                                  
-                                  const blokDiLahanIni = (blokData || [])
-                                      .filter(b => String(b.properties?.id_lahan || b.id_lahan) === idLahan)
-                                      .sort((a, b) => {
-                                          const namaA = a.properties?.nama_blok || a.nama_blok || '';
-                                          const namaB = b.properties?.nama_blok || b.nama_blok || '';
-                                          return namaA.localeCompare(namaB, undefined, { numeric: true });
-                                      });
+              {/* Hapus Petak */}
+              <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100 space-y-1.5">
+                <label className="block text-[10px] font-mono font-bold text-slate-500 uppercase">
+                  Hapus Blok Petak
+                </label>
+                <div className="flex gap-2">
+                  <select 
+                    id="select-delete-blok"
+                    className="flex-1 h-8 px-2 text-xs border border-slate-200 rounded-lg outline-none bg-white text-slate-700"
+                  >
+                    <option value="">-- Pilih Petak --</option>
+                    {Array.isArray(lahanData) && lahanData.map(lahan => {
+                      const idLahan = String(lahan.properties?.id_lahan || lahan.id_lahan);
+                      const namaLahan = lahan.properties?.nama_lahan || lahan.nama_lahan;
+                      const blokDiLahanIni = (blokData || [])
+                        .filter(b => String(b.properties?.id_lahan || b.id_lahan) === idLahan)
+                        .sort((a, b) => (a.properties?.nama_blok || a.nama_blok || '').localeCompare(b.properties?.nama_blok || b.nama_blok || '', undefined, { numeric: true }));
 
-                                  if (blokDiLahanIni.length === 0) return null; 
+                      if (blokDiLahanIni.length === 0) return null; 
 
-                                  return (
-                                      <optgroup key={idLahan} label={`◆ Lahan ${namaLahan}`}>
-                                          {blokDiLahanIni.map(b => (
-                                              <option key={b.properties?.id_blok || b.id_blok} value={b.properties?.id_blok || b.id_blok}>
-                                                  {b.properties?.nama_blok || b.nama_blok}
-                                              </option>
-                                          ))}
-                                      </optgroup>
-                                  );
-                              })}
-                          </select>
-                          <button 
-                              onClick={() => handleDeleteBlok(document.getElementById('select-delete-blok').value)}
-                              className="bg-red-500 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded text-xs transition-colors shadow-sm"
-                          >
-                               Hapus
-                          </button>
-                      </div>
-                  </div>
-
-                  <div className="bg-red-50/50 p-3 rounded-lg border border-red-100 flex flex-col gap-2">
-                      <label className="block text-[10px] font-bold text-gray-600 uppercase">Hapus Lahan Induk</label>
-                      <div className="flex gap-2">
-                          <select 
-                              id="select-delete-lahan"
-                              className="flex-1 p-2 text-xs border border-gray-300 rounded outline-none focus:border-red-500 bg-white"
-                          >
-                              <option value="">-- Pilih Lahan --</option>
-                              {/* 🌟 PERBAIKAN: Sorting diterapkan di Dropdown Hapus Lahan */}
-                              {Array.isArray(lahanData) && [...lahanData]
-                                  .sort((a, b) => {
-                                      const namaA = a.properties?.nama_lahan || a.nama_lahan || '';
-                                      const namaB = b.properties?.nama_lahan || b.nama_lahan || '';
-                                      return namaA.localeCompare(namaB, undefined, { numeric: true });
-                                  })
-                                  .map(lahan => (
-                                      <option key={lahan.properties?.id_lahan || lahan.id_lahan} value={lahan.properties?.id_lahan || lahan.id_lahan}>
-                                          {lahan.properties?.nama_lahan || lahan.nama_lahan}
-                                      </option>
-                                  ))
-                              }
-                          </select>
-                          <button 
-                              onClick={() => handleDeleteLahan(document.getElementById('select-delete-lahan').value)}
-                              className="bg-red-600 hover:bg-red-800 text-white font-bold px-3 py-1.5 rounded text-xs transition-colors shadow-sm"
-                          >
-                               Hapus
-                          </button>
-                      </div>
-                  </div>
+                      return (
+                        <optgroup key={idLahan} label={`◆ Lahan ${namaLahan}`}>
+                          {blokDiLahanIni.map(b => (
+                            <option key={b.properties?.id_blok || b.id_blok} value={b.properties?.id_blok || b.id_blok}>
+                              {b.properties?.nama_blok || b.nama_blok}
+                            </option>
+                          ))}
+                        </optgroup>
+                      );
+                    })}
+                  </select>
+                  <button 
+                    type="button"
+                    onClick={() => handleDeleteBlok(document.getElementById('select-delete-blok').value)}
+                    className="px-3 h-8 bg-rose-600 hover:bg-rose-700 text-white font-mono text-xs font-bold rounded-lg transition shadow-xs"
+                  >
+                    Hapus
+                  </button>
+                </div>
               </div>
+
+              {/* Hapus Lahan Induk */}
+              <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100 space-y-1.5">
+                <label className="block text-[10px] font-mono font-bold text-slate-500 uppercase">
+                  Hapus Lahan Induk
+                </label>
+                <div className="flex gap-2">
+                  <select 
+                    id="select-delete-lahan"
+                    className="flex-1 h-8 px-2 text-xs border border-slate-200 rounded-lg outline-none bg-white text-slate-700"
+                  >
+                    <option value="">-- Pilih Lahan --</option>
+                    {Array.isArray(lahanData) && [...lahanData]
+                      .sort((a, b) => (a.properties?.nama_lahan || a.nama_lahan || '').localeCompare(b.properties?.nama_lahan || b.nama_lahan || '', undefined, { numeric: true }))
+                      .map(lahan => (
+                        <option key={lahan.properties?.id_lahan || lahan.id_lahan} value={lahan.properties?.id_lahan || lahan.id_lahan}>
+                          {lahan.properties?.nama_lahan || lahan.nama_lahan}
+                        </option>
+                      ))
+                    }
+                  </select>
+                  <button 
+                    type="button"
+                    onClick={() => handleDeleteLahan(document.getElementById('select-delete-lahan').value)}
+                    className="px-3 h-8 bg-rose-700 hover:bg-rose-800 text-white font-mono text-xs font-bold rounded-lg transition shadow-xs"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+
+            </div>
           </div>
           
         </div>

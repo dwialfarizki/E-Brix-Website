@@ -12,14 +12,14 @@ import ManageLand from './views/ManageLand';
 import ManagePetani from './views/ManagePetani';
 
 const EyeIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4 text-slate-400 hover:text-emerald-600 transition-colors">
     <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
 );
 
 const EyeOffIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4 text-slate-400 hover:text-emerald-600 transition-colors">
     <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
   </svg>
 );
@@ -130,7 +130,7 @@ function App() {
       try {
         await axios.delete(`${API_BASE_URL}/data-brix/${id_titik}`);
         fetchSemuaData();
-      } catch (error) {
+      } catch (_error) {
         alert("Gagal menghapus titik. Cek koneksi server.");
       }
     }
@@ -186,169 +186,231 @@ function App() {
     }
   }, [selectedLahan, selectedBlok, brixFilter, sampelData, blokData]);
 
+  // ==========================================
+  // REDESIGNED PRECISION AGRITECH LOGIN
+  // ==========================================
   if (!userLogin) {
     return (
-      <main className="w-screen h-screen overflow-hidden flex items-center justify-center font-sans antialiased m-0 p-4 bg-slate-100">
+      <main className="w-screen h-screen overflow-hidden flex items-center justify-center p-4 md:p-8 bg-[#07130e] relative font-sans">
+        
+        {/* Background Ambient Lighting & High-Tech Grid */}
+        <div className="absolute inset-0 bg-agro-grid opacity-30 pointer-events-none" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-emerald-600/20 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-teal-500/15 rounded-full blur-[140px] pointer-events-none" />
 
-        {/* Card Container Utama */}
-        <div className="relative z-10 w-full max-w-4xl h-[560px] bg-white shadow-2xl rounded-3xl overflow-hidden flex flex-col md:flex-row border border-slate-200/80">
+        {/* Telemetry Status Bar Header */}
+        <div className="absolute top-6 inset-x-8 max-w-5xl mx-auto hidden md:flex items-center justify-between text-[11px] font-mono text-emerald-500/70 select-none">
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-beacon" />
+            E-BRIX GEODETIC SENSOR NETWORK • REV 2.6
+          </span>
+          <span>LAT -6.7111° • LON 108.4312° • CANE HARVEST CAMPAIGN 2026</span>
+        </div>
 
-          {/* SISI KIRI: Visual Wave Illustration (Area Lengkung) */}
-          <div className="hidden md:block w-[50%] h-full relative overflow-hidden bg-gradient-to-br from-emerald-600 via-green-600 to-teal-800">
+        {/* Glassmorphic Portal Container */}
+        <div className="relative z-10 w-full max-w-4xl min-h-[580px] bg-[#0c1f17]/90 backdrop-blur-2xl rounded-3xl overflow-hidden flex flex-col md:flex-row border border-emerald-500/25 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]">
+          
+          {/* SISI KIRI: Agronomic Telemetry HUD & Visual */}
+          <div className="hidden md:flex w-1/2 p-10 flex-col justify-between border-r border-emerald-950/80 bg-gradient-to-br from-[#0a1e16] via-[#091811] to-[#06110c] relative overflow-hidden">
+            
+            {/* Visual Radar Circles Graphic */}
+            <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full border border-emerald-500/10 pointer-events-none" />
+            <div className="absolute -top-12 -left-12 w-56 h-56 rounded-full border border-emerald-500/20 pointer-events-none" />
 
-            {/* Background Image Overlay */}
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-overlay"
-              style={{
-                backgroundImage: `url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200&auto=format&fit=crop')`
-              }}
-            ></div>
-
-            {/* Curved SVG Masking di Sisi Kanan Ilustrasi (Lengkungan Membuka ke Kanan) */}
-            <svg
-              className="absolute top-0 -right-1 h-full w-28 text-white fill-current pointer-events-none"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-            >
-              <path d="M100 0 L0 0 Q 100 50, 0 100 L100 100 Z" />
-            </svg>
-
-            {/* Content Overlay Kiri dengan Margin Kanan (pr-20) untuk Menghindari Kurva */}
-            <div className="relative z-10 h-full p-10 pr-20 flex flex-col justify-between text-white text-left items-start">
-
-              <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-wider text-emerald-100 border border-white/30">
-                Smart Agriculture
+            <div className="relative z-10 space-y-6">
+              {/* Brand Logo */}
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-700 flex items-center justify-center font-black text-white text-base shadow-[0_0_25px_rgba(16,185,129,0.4)] ring-1 ring-emerald-300/40">
+                  EB
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-extrabold tracking-wider text-white">E-BRIX</h2>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded font-bold">
+                      PORTAL
+                    </span>
+                  </div>
+                  <p className="text-[10px] font-mono text-emerald-400/80 uppercase tracking-wider">
+                    Precision Agro-GIS & Telemetry
+                  </p>
+                </div>
               </div>
 
-              <div className="max-w-xs space-y-2">
-                <h2 className="text-2xl font-extrabold leading-tight">
-                  Monitoring Kemasakan Tebu Presisi
-                </h2>
-                <p className="text-xs text-emerald-100/90 leading-relaxed font-light">
-                  Kelola data sampel Brix, lokasi blok perkebunan, dan estimasi waktu panen ideal secara digital.
+              {/* Title & Tagline */}
+              <div className="space-y-2 pt-4">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-300 bg-emerald-950/70 px-2.5 py-1 rounded-full border border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Sistem Pemantauan Digital
+                </span>
+                <h3 className="text-2xl font-black text-white leading-tight">
+                  Kemasakan Tebu Presisi & Estimasi Waktu Panen
+                </h3>
+                <p className="text-xs text-slate-300/80 leading-relaxed font-light">
+                  Platform GIS analitik untuk pemetaan refraktometer Brix, zonasi petak kebun, serta optimasi rendemen gula tebu.
                 </p>
               </div>
+            </div>
 
+            {/* Live Metrics Specimen Preview */}
+            <div className="relative z-10 space-y-2.5 pt-6 border-t border-emerald-900/30">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-emerald-400/70 font-semibold">
+                Parameter Pemantauan
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-md">
+                  <div className="text-[10px] font-mono text-slate-400">AMBANG KEMASAKAN</div>
+                  <div className="font-mono font-bold text-emerald-400 text-sm mt-0.5">&gt; 19.0° Bx</div>
+                </div>
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-md">
+                  <div className="text-[10px] font-mono text-slate-400">RESOLUSI SPASIAL</div>
+                  <div className="font-mono font-bold text-teal-300 text-sm mt-0.5">Sub-Meter RTK</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Micro Copyright */}
+            <div className="relative z-10 pt-4 flex items-center justify-between text-[10px] font-mono text-slate-500">
+              <span>AGRO-INTELLIGENCE CORE</span>
+              <span>© 2026 E-BRIX SYSTEM</span>
             </div>
 
           </div>
 
-          {/* SISI KANAN: Form Login */}
-          <div className="w-full md:w-[50%] h-full p-8 md:p-10 flex flex-col justify-between z-10 bg-white">
-
-            {/* Header Logo & Title */}
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-green-600 flex items-center justify-center font-black text-white text-lg shadow-md shadow-green-600/30 tracking-wider">
-                  EB
+          {/* SISI KANAN: High-Tech Glass Form Login */}
+          <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-between bg-white/[0.98] text-slate-800">
+            
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                    Otorisasi Akun
+                  </h1>
+                  <p className="text-xs text-slate-500 font-medium mt-1">
+                    Masuk untuk mengelola data telemetri kebun
+                  </p>
                 </div>
-                <span className="font-bold text-slate-800 text-lg tracking-tight">Portal E-Brix</span>
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-700">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
               </div>
 
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                  Masuk Ke Sistem
-                </h1>
-                <p className="text-xs text-slate-500 mt-1 font-medium">
-                  Sistem Pemantauan Kemasakan Tebu & Kualitas Brix
-                </p>
-              </div>
+              {loginError && (
+                <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold flex items-center gap-2">
+                  <svg className="w-4 h-4 shrink-0 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              {/* Form Input */}
+              <form onSubmit={handleLogin} className="space-y-4">
+                
+                {/* Role Switcher */}
+                <div>
+                  <label className="block text-[10px] font-mono uppercase tracking-wider font-bold text-slate-400 mb-1.5">
+                    Tingkat Akses (Role)
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+                    <button
+                      type="button"
+                      onClick={() => setLoginForm({ ...loginForm, role: 'admin' })}
+                      className={`py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 ${
+                        loginForm.role === 'admin'
+                          ? 'bg-white text-emerald-800 shadow-sm border border-slate-200 font-extrabold'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      Administrator
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginForm({ ...loginForm, role: 'operator' })}
+                      className={`py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 ${
+                        loginForm.role === 'operator'
+                          ? 'bg-white text-emerald-800 shadow-sm border border-slate-200 font-extrabold'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Operator Kebun
+                    </button>
+                  </div>
+                </div>
+
+                {/* Input Username */}
+                <div>
+                  <label className="block text-[10px] font-mono uppercase tracking-wider font-bold text-slate-400 mb-1.5" htmlFor="admin-identifier">
+                    Nama Pengguna (Username)
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="admin-identifier"
+                      type="text"
+                      required
+                      value={loginForm.username}
+                      onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                      placeholder="Masukkan username anda"
+                      className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Input Password */}
+                <div>
+                  <label className="block text-[10px] font-mono uppercase tracking-wider font-bold text-slate-400 mb-1.5" htmlFor="admin-password">
+                    Kata Sandi (Password)
+                  </label>
+                  <div className="relative flex items-center">
+                    <input
+                      id="admin-password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={loginForm.password}
+                      onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                      placeholder="••••••••••••"
+                      className="w-full h-11 pl-4 pr-11 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="w-full h-11 mt-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-mono font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-700/25 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                  Masuk Ke Portal
+                </button>
+
+              </form>
             </div>
 
-            {loginError && (
-              <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-semibold border border-rose-200/60 text-center">
-                {loginError}
-              </div>
-            )}
-
-            {/* Form */}
-            <form onSubmit={handleLogin} className="flex flex-col gap-3.5 my-auto">
-
-              {/* Switch Role */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Hak Akses
-                </label>
-                <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/60">
-                  <button
-                    type="button"
-                    onClick={() => setLoginForm({ ...loginForm, role: 'admin' })}
-                    className={`py-1.5 text-xs font-bold rounded-lg transition-all duration-200 ${loginForm.role === 'admin'
-                        ? 'bg-white text-green-700 shadow-sm border border-slate-200/60'
-                        : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                  >
-                    Admin
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLoginForm({ ...loginForm, role: 'operator' })}
-                    className={`py-1.5 text-xs font-bold rounded-lg transition-all duration-200 ${loginForm.role === 'operator'
-                        ? 'bg-white text-green-700 shadow-sm border border-slate-200/60'
-                        : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                  >
-                    Operator
-                  </button>
-                </div>
-              </div>
-
-              {/* Input Username */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider" htmlFor="admin-identifier">
-                  Username
-                </label>
-                <input
-                  id="admin-identifier"
-                  type="text"
-                  required
-                  value={loginForm.username}
-                  onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                  className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 text-slate-900 text-xs rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all font-medium placeholder:text-slate-400"
-                  placeholder="Masukkan username anda"
-                />
-              </div>
-
-              {/* Input Password */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider" htmlFor="admin-password">
-                  Password
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    id="admin-password"
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                    className="w-full h-10 pl-3.5 pr-10 bg-slate-50 border border-slate-200 text-slate-900 text-xs rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all font-medium placeholder:text-slate-400"
-                    placeholder="••••••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 focus:outline-none p-1 rounded-lg hover:bg-slate-200/50 transition-colors"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className="w-full h-10 mt-1 bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-green-600/30 transition-all duration-200 active:scale-[0.98]"
-              >
-                Masuk Ke Sistem
-              </button>
-
-            </form>
-
-            {/* Footer */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-medium">
-              <span>E-BRIX DASHBOARD</span>
-              <span>© 2026 AGRO-INTELLIGENCE</span>
+            {/* Bottom Security Note */}
+            <div className="pt-6 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                KONEKSI AMAN SSL
+              </span>
+              <span>VERSI 2.6.0 PRO</span>
             </div>
 
           </div>
@@ -359,9 +421,13 @@ function App() {
     );
   }
 
+  // ==========================================
+  // MAIN DASHBOARD SHELL
+  // ==========================================
   return (
-    <div className="flex h-screen w-screen bg-[#f4f7f6] font-sans overflow-hidden">
-
+    <div className="flex h-screen w-screen bg-[#f1f5f3] font-sans overflow-hidden">
+      
+      {/* Precision Agro Sidebar */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -375,28 +441,55 @@ function App() {
         onLogout={handleLogout}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      {/* Main Workspace Frame */}
+      <div className="flex-1 flex flex-col overflow-hidden relative min-w-0">
+        
+        {/* Modern HUD Header */}
         <Header activeTab={activeTab} />
 
-        <main className="flex-1 p-8 overflow-y-auto flex flex-col gap-6">
+        {/* Content View Area */}
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto flex flex-col gap-6">
 
+          {/* Precision StatCards for Map & Analysis View */}
           {(activeTab === 'peta' || activeTab === 'analisis') && (
-            <div className="grid grid-cols-4 gap-6 shrink-0">
-              <StatCard title="RATA-RATA BRIX" value={`${stats.avg_brix || 0}°`} border="border-l-4 border-green-500" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 shrink-0">
+              <StatCard 
+                title="Rata-rata Brix" 
+                value={`${stats.avg_brix || 0}°`} 
+                telemetryCode="AVG.BX"
+                subtext="Indeks kematangan rata-rata"
+              />
 
-              <StatCard title="PETAK DITAMPILKAN" value={
-                selectedBlok === 'all'
-                  ? (selectedLahan === 'all'
-                    ? (Array.isArray(blokData) ? blokData.length : 0)
-                    : (Array.isArray(blokData) ? blokData.filter(b => String(b?.properties?.id_lahan || b?.id_lahan) === String(selectedLahan)).length : 0))
-                  : 1
-              } border="border-l-4 border-green-500" />
+              <StatCard 
+                title="Petak Ditampilkan" 
+                value={
+                  selectedBlok === 'all'
+                    ? (selectedLahan === 'all'
+                      ? (Array.isArray(blokData) ? blokData.length : 0)
+                      : (Array.isArray(blokData) ? blokData.filter(b => String(b?.properties?.id_lahan || b?.id_lahan) === String(selectedLahan)).length : 0))
+                    : 1
+                } 
+                telemetryCode="PLOT.QTY"
+                subtext={selectedBlok !== 'all' ? '1 petak spesifik aktif' : `${Array.isArray(blokData) ? blokData.length : 0} total petak`}
+              />
 
-              <StatCard title="BRIX TERTINGGI" value={`${stats.max_brix || 0}°`} border="border-l-4 border-green-500" />
-              <StatCard title="BRIX TERENDAH" value={`${stats.min_brix || 0}°`} border="border-l-4 border-green-500" />
+              <StatCard 
+                title="Brix Tertinggi" 
+                value={`${stats.max_brix || 0}°`} 
+                telemetryCode="MAX.BX"
+                subtext="Puncak kadar gula poligon"
+              />
+
+              <StatCard 
+                title="Brix Terendah" 
+                value={`${stats.min_brix || 0}°`} 
+                telemetryCode="MIN.BX"
+                subtext="Titik vegetatif / sampling awal"
+              />
             </div>
           )}
 
+          {/* Active View Component */}
           {activeTab === 'peta' && (
             <DashboardMap
               selectedLahan={selectedLahan}
@@ -437,6 +530,7 @@ function App() {
 
         </main>
       </div>
+
     </div>
   );
 }

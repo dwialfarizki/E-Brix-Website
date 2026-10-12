@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import MapPopup from '../components/MapPopup';
 import mapboxgl from 'mapbox-gl';
@@ -22,8 +22,6 @@ const DashboardMap = ({
 
     const [isLoadingEBK, setIsLoadingEBK] = useState(false);
     const [isMapReady, setIsMapReady] = useState(false);
-    
-    // 🌟 STATE BARU: Untuk mengatur visibilitas titik marker
     const [showMarkers, setShowMarkers] = useState(true);
 
     const dapatkanKoordinatTerbang = (geometry) => {
@@ -64,8 +62,12 @@ const DashboardMap = ({
             container: mapContainer.current,
             style: 'mapbox://styles/mapbox/satellite-streets-v12',
             center: [108.4312, -6.7111], 
-            zoom: 15
+            zoom: 15,
+            attributionControl: false
         });
+
+        // Add standard navigation controls with clean styling
+        map.current.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'top-right');
 
         map.current.on('load', () => {
             map.current.addSource('blok-source', {
@@ -73,13 +75,14 @@ const DashboardMap = ({
                 data: { type: 'FeatureCollection', features: [] }
             });
 
+            // Modern Agro Emerald fill for blocks
             map.current.addLayer({
                 id: 'blok-layer',
                 type: 'fill',
                 source: 'blok-source',
                 paint: { 
-                    'fill-color': '#3b82f6',   
-                    'fill-opacity': 0.15       
+                    'fill-color': '#10b981',   
+                    'fill-opacity': 0.18       
                 } 
             });
 
@@ -88,9 +91,9 @@ const DashboardMap = ({
                 type: 'line',
                 source: 'blok-source',
                 paint: {
-                    'line-color': '#60a5fa',   
-                    'line-width': 2,
-                    'line-dasharray': [2, 2]
+                    'line-color': '#34d399',   
+                    'line-width': 2.2,
+                    'line-dasharray': [3, 2]
                 }
             });
 
@@ -99,12 +102,13 @@ const DashboardMap = ({
                 data: { type: 'FeatureCollection', features: [] }
             });
 
+            // Cane Gold outline for outer plantation boundary
             map.current.addLayer({
                 id: 'lahan-layer',
                 type: 'line',
                 source: 'lahan-source',
                 paint: {
-                    'line-color': '#f97316', 
+                    'line-color': '#f59e0b', 
                     'line-width': 3.5
                 }
             });
@@ -120,12 +124,12 @@ const DashboardMap = ({
                 map.current.getCanvas().style.cursor = 'pointer';
 
                 if (e.features.length > 0) {
-                    const namaBlok = e.features[0].properties?.nama_blok || 'Blok Tanpa Nama';
+                    const namaBlok = e.features[0].properties?.nama_blok || 'Petak Tanpa Nama';
                     const coordinates = e.lngLat;
 
                     hoverPopupRef.current
                         .setLngLat(coordinates)
-                        .setHTML(`<div class="p-1 px-2 font-bold text-gray-800 bg-white/90 backdrop-blur-sm rounded text-xs shadow-md border border-gray-100">${namaBlok}</div>`)
+                        .setHTML(`<div class="px-3 py-1.5 font-mono text-xs font-bold text-emerald-950 bg-white/95 backdrop-blur-md rounded-lg shadow-lg border border-emerald-500/30 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>${namaBlok}</div>`)
                         .addTo(map.current);
                 }
             });
@@ -194,7 +198,7 @@ const DashboardMap = ({
                     type: 'raster',
                     source: 'gee-kriging-source',
                     paint: {
-                        'raster-opacity': 0.50,
+                        'raster-opacity': 0.55,
                         'raster-fade-duration': 600 
                     }
                 }, 'blok-line-layer'); 
@@ -262,11 +266,9 @@ const DashboardMap = ({
         } catch (error) { console.error("Mapbox Error (Blok):", error); }
 
         try {
-            // Hapus semua marker yang ada saat ini
             markersRef.current.forEach(marker => marker.remove());
             markersRef.current = [];
 
-            // 🌟 LOGIKA BARU: Jika showMarkers bernilai false, hentikan proses pembuatan titik
             if (!showMarkers) return;
 
             let validBlokIds = arrBlok.map(b => String(b?.properties?.id_blok || b?.id_blok));
@@ -300,6 +302,7 @@ const DashboardMap = ({
                 const id_titik = titik?.properties?.id_data || titik?.id_data || titik?.id_titik || titik?.properties?.id_titik || titik?.id_brix || titik?.properties?.id_brix || titik?.id || titik?.properties?.id; 
 
                 const pengguna = titik?.properties?.nama_petani || titik?.nama_petani || 'Tidak Diketahui';
+                const jenisTebu = titik?.properties?.jenis_tebu || titik?.jenis_tebu;
                 const waktuAsli = titik?.properties?.created_at || titik?.created_at;
                 const tanggal = waktuAsli ? new Date(waktuAsli).toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
                 const metodeInput = titik?.properties?.metode_input || titik?.metode_input || 'manual';
@@ -320,6 +323,7 @@ const DashboardMap = ({
                             pinColor={pinColor} 
                             idTitik={id_titik}
                             metodeInput={metodeInput}
+                            jenisTebu={jenisTebu}
                             onDelete={() => {
                                 if (!id_titik) {
                                     alert("Gagal: ID Titik tidak ditemukan! Cek Inspect Element > Console untuk melihat struktur datanya.");
@@ -351,10 +355,6 @@ const DashboardMap = ({
         } catch (error) { console.error("Mapbox Error (Titik Sampel):", error); }
     };
 
-    // ==========================================
-    // EFEK 1: UPDATE VEKTOR (TITIK & POLIGON)
-    // ==========================================
-    // Dipisah agar titik bisa disembunyikan tanpa me-load ulang Heatmap
     useEffect(() => {
         if (isMapReady) {
             updateVectorData(); 
@@ -362,10 +362,6 @@ const DashboardMap = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedLahan, selectedBlok, brixFilter, lahanData, blokData, sampelData, isMapReady, showMarkers]);
 
-    // ==========================================
-    // EFEK 2: UPDATE HEATMAP GEE (RASTER)
-    // ==========================================
-    // Tidak akan ke-trigger saat showMarkers/brixFilter berubah
     useEffect(() => {
         if (isMapReady) {
             fetchGEEHeatmap();  
@@ -373,94 +369,88 @@ const DashboardMap = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedLahan, selectedBlok, lahanData, blokData, sampelData, isMapReady]);
 
+    // Menghitung jumlah titik yang sedang aktif difilter
+    const hitungTitikAktif = () => {
+        const arrSampel = Array.isArray(sampelData) ? sampelData : [];
+        const arrBlok = Array.isArray(blokData) ? blokData : [];
+        let validBlokIds = arrBlok.map(b => String(b?.properties?.id_blok || b?.id_blok));
+        if (selectedLahan !== 'all') {
+            validBlokIds = arrBlok
+                .filter(b => String(b?.properties?.id_lahan || b?.id_lahan) === String(selectedLahan))
+                .map(b => String(b?.properties?.id_blok || b?.id_blok));
+        }
+        return arrSampel.filter(titik => {
+            const idBlokTitik = String(titik?.properties?.id_blok || titik?.id_blok || '');
+            const brix = parseFloat(titik?.nilai_brix || titik?.properties?.nilai_brix || 0);
 
-return (
-    <div className="bg-white p-4 pb-4 rounded-xl shadow flex flex-col h-auto border border-gray-100 relative">
-            <div className="flex justify-between items-center mb-4 shrink-0">
-                <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-green-600">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                    </svg>
-                    <span className="text-lg">Peta Estimasi Kematangan (Brix)</span>
-                </h3>
-                
-                {isLoadingEBK && (
-                    <span className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full animate-pulse border border-blue-200 flex items-center gap-1.5">
-                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Memproses Komputasi Kriging GEE...
-                    </span>
-                )}
-            </div>
+            let isLolosWilayah = true;
+            if (selectedBlok !== 'all') isLolosWilayah = (idBlokTitik === String(selectedBlok));
+            else if (selectedLahan !== 'all') isLolosWilayah = validBlokIds.includes(idBlokTitik);
+
+            let isLolosBrix = true;
+            if (brixFilter === 'rendah') isLolosBrix = brix < 15;
+            else if (brixFilter === 'sedang') isLolosBrix = brix >= 15 && brix <= 19;
+            else if (brixFilter === 'tinggi') isLolosBrix = brix > 19;
+
+            return isLolosWilayah && isLolosBrix;
+        }).length;
+    };
+
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 flex flex-col overflow-hidden relative">
             
-            <div className="relative flex-1 rounded-xl overflow-hidden border border-gray-200 shadow-inner min-h-[400px]">
-                <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
-                
-                {/* 🌟 TOMBOL TOGGLE TITIK (MENGAMBANG DI PETA KIRI BAWAH) */}
-                <div className="absolute bottom-6 left-6 z-10">
-                    <button 
-                        onClick={() => setShowMarkers(!showMarkers)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-colors border ${
-                            showMarkers 
-                            ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' 
-                            : 'bg-green-600 text-white border-green-700 hover:bg-green-700'
-                        }`}
-                    >
-                        {showMarkers ? (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                                </svg>
-                                Sembunyikan Titik
-                            </>
-                        ) : (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                Tampilkan Titik
-                            </>
-                        )}
-                    </button>
-                </div>
-
-                <div className="absolute bottom-6 right-6 bg-white p-4 rounded-xl shadow-lg border border-gray-100 min-w-[200px] z-10">
-                    <div className="font-bold mb-4 text-[#1e293b] text-base">Estimasi Kematangan (Brix)</div>
-                    <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 rounded-full bg-[#10b981] shrink-0 border border-green-700/20 shadow-sm"></div>
-                            <span className="text-[#475569] text-sm font-medium">Rendah (&lt; 15.0°)</span>
+            {/* TOP BAR: Precision Telemetry Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">
+                                Peta Spasial & Interpolasi Kriging
+                            </h3>
+                            <span className="font-mono text-[10px] text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full font-bold">
+                                {hitungTitikAktif()} TITIK TERPETA
+                            </span>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 rounded-full bg-[#f59e0b] shrink-0 border border-orange-700/20 shadow-sm"></div>
-                            <span className="text-[#475569] text-sm font-medium">Sedang (15.0° - 19.0°)</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 rounded-full bg-[#ef4444] shrink-0 border border-red-700/20 shadow-sm"></div>
-                            <span className="text-[#475569] text-sm font-medium">Tinggi (&gt; 19.0°)</span>
-                        </div>
+                        <p className="text-[11px] text-slate-500">
+                            Layer Citra Satelit Resolusi Tinggi dengan batas poligon perkebunan tebu
+                        </p>
                     </div>
                 </div>
+
+                {/* Loading Status & Quick Map Tools */}
+                <div className="flex items-center gap-2">
+                    {isLoadingEBK && (
+                        <div className="text-xs font-mono text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-2 shadow-sm animate-pulse">
+                            <svg className="animate-spin w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Komputasi Interpolasi Kriging GEE...</span>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            <div className="mt-4 bg-[#f8fafc] p-4 rounded-xl border border-gray-200 flex flex-wrap items-end gap-4 shadow-sm shrink-0">
+            {/* INTEGRATED PRECISION FILTER TOOLBAR */}
+            <div className="p-4 bg-white border-b border-slate-100 flex flex-wrap items-end gap-3.5">
                 
+                {/* Lahan Induk */}
                 <div className="flex-1 min-w-[200px]">
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-orange-500">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-                        </svg>
-                        Lahan Induk
+                    <label className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider font-bold text-slate-500 mb-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                        Lahan Induk (Estate)
                     </label>
                     <select 
                         value={selectedLahan} 
                         onChange={(e) => { setSelectedLahan(e.target.value); setSelectedBlok('all'); }} 
-                        className="w-full p-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-white shadow-sm cursor-pointer transition-all hover:border-gray-400"
+                        className="w-full h-10 px-3 text-xs font-semibold text-slate-800 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 hover:bg-white transition-all cursor-pointer"
                     >
-                        <option value="all">Semua Lahan</option>
+                        <option value="all">🌐 Seluruh Wilayah Perkebunan</option>
                         {Array.isArray(lahanData) && lahanData.map(l => (
                             <option key={l.properties?.id_lahan || l.id_lahan} value={l.properties?.id_lahan || l.id_lahan}>
                                 {l.properties?.nama_lahan || l.nama_lahan}
@@ -469,21 +459,19 @@ return (
                     </select>
                 </div>
 
+                {/* Petak Lahan */}
                 <div className="flex-1 min-w-[200px]">
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-blue-500">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                        </svg>
-                        Petak Lahan
+                    <label className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider font-bold text-slate-500 mb-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Petak / Blok Terpetakan
                     </label>
                     <select 
                         value={selectedBlok} 
                         onChange={(e) => setSelectedBlok(e.target.value)} 
-                        className="w-full p-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-all hover:border-gray-400"
+                        className="w-full h-10 px-3 text-xs font-semibold text-slate-800 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 hover:bg-white transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
                         disabled={selectedLahan === 'all' && (blokData || []).length === 0}
                     >
-                        <option value="all">Semua Petak</option>
-                        
+                        <option value="all">📍 Seluruh Petak Lahan</option>
                         {selectedLahan === 'all' ? (
                             Array.isArray(lahanData) && lahanData.map(lahan => {
                                 const idLahan = String(lahan.properties?.id_lahan || lahan.id_lahan);
@@ -526,36 +514,145 @@ return (
                     </select>
                 </div>
 
+                {/* Filter Nilai Brix */}
                 <div className="flex-1 min-w-[200px]">
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-green-500">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-                        </svg>
-                        Filter Nilai Brix
+                    <label className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider font-bold text-slate-500 mb-1.5">
+                        <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                        Filter Ambang Kemasakan (°Bx)
                     </label>
                     <select 
                         value={brixFilter} 
                         onChange={(e) => setBrixFilter(e.target.value)} 
-                        className="w-full p-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 bg-white shadow-sm cursor-pointer transition-all hover:border-gray-400"
+                        className="w-full h-10 px-3 text-xs font-semibold text-slate-800 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 hover:bg-white transition-all cursor-pointer"
                     >
-                        <option value="all">Semua Nilai Brix</option>
-                        <option value="rendah">Rendah (&lt; 15.0°)</option>
-                        <option value="sedang">Sedang (15.0° - 19.0°)</option>
-                        <option value="tinggi">Tinggi (&gt; 19.0°)</option>
+                        <option value="all">Semua Nilai Brix (Lengkap)</option>
+                        <option value="rendah">🌱 Rendah (&lt; 15.0° - Muda)</option>
+                        <option value="sedang">🌾 Sedang (15.0° - 19.0° - Menjelang Panen)</option>
+                        <option value="tinggi">⚡ Tinggi (&gt; 19.0° - Siap Tebang)</option>
                     </select>
                 </div>
 
-                <div className="w-auto">
+                {/* Tombol Reset Filter */}
+                <div>
                     <button 
                         onClick={() => { setSelectedLahan('all'); setSelectedBlok('all'); setBrixFilter('all'); }} 
-                        className="px-5 py-2.5 bg-white text-gray-600 hover:bg-red-50 hover:text-red-600 font-bold text-sm rounded-lg border border-gray-300 hover:border-red-300 transition-colors flex items-center gap-2 shadow-sm"
+                        className="h-10 px-4 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-mono font-bold text-xs rounded-xl border border-slate-200 hover:border-rose-200 transition-colors flex items-center gap-2 shadow-sm"
+                        title="Reset seluruh filter"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         Reset
                     </button>
                 </div>
+
+            </div>
+
+            {/* MAP CANVAS VIEWPORT */}
+            <div className="relative w-full h-[560px] bg-slate-900 overflow-hidden">
+                <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+                
+                {/* FLOATING HUD CONTROLS (KIRI BAWAH) */}
+                <div className="absolute bottom-6 left-6 z-10 flex flex-col gap-2">
+                    
+                    {/* Toggle Marker Pins */}
+                    <button 
+                        onClick={() => setShowMarkers(!showMarkers)}
+                        className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-mono text-xs font-bold shadow-lg backdrop-blur-md transition-all border ${
+                            showMarkers 
+                            ? 'bg-white/95 text-slate-800 border-slate-200/80 hover:bg-white' 
+                            : 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700'
+                        }`}
+                    >
+                        {showMarkers ? (
+                            <>
+                                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span>Titik Sensor: Ditampilkan</span>
+                            </>
+                        ) : (
+                            <>
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                </svg>
+                                <span>Titik Sensor: Tersembunyi</span>
+                            </>
+                        )}
+                    </button>
+
+                </div>
+
+                {/* FLOATING BRIX SPECTRUM HUD (KANAN BAWAH) */}
+                <div className="absolute bottom-6 right-6 bg-white/95 backdrop-blur-xl p-4 rounded-2xl shadow-xl border border-slate-200/90 min-w-[260px] z-10 select-none">
+                    
+                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                        <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-slate-500">
+                            Spektrum Kemasakan Tebu
+                        </span>
+                        <span className="text-[9px] font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">
+                            STANDAR °Bx
+                        </span>
+                    </div>
+
+                    {/* Gradient Bar Visual */}
+                    <div className="mb-3">
+                        <div className="h-2.5 w-full rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500 shadow-inner" />
+                        <div className="flex justify-between text-[9px] font-mono text-slate-400 mt-1 font-semibold">
+                            <span>&lt; 15°</span>
+                            <span>15° - 19°</span>
+                            <span>&gt; 19°</span>
+                        </div>
+                    </div>
+
+                    {/* Interactive Filter Pills */}
+                    <div className="space-y-1.5 text-xs">
+                        <button
+                            type="button"
+                            onClick={() => setBrixFilter(brixFilter === 'rendah' ? 'all' : 'rendah')}
+                            className={`w-full flex items-center justify-between p-1.5 px-2 rounded-lg transition-all text-left ${
+                                brixFilter === 'rendah' ? 'bg-emerald-100/80 font-bold' : 'hover:bg-slate-50'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm"></span>
+                                <span className="text-slate-700 text-xs font-medium">Vegetatif / Muda</span>
+                            </div>
+                            <span className="font-mono text-[10px] text-slate-500">&lt; 15.0°</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setBrixFilter(brixFilter === 'sedang' ? 'all' : 'sedang')}
+                            className={`w-full flex items-center justify-between p-1.5 px-2 rounded-lg transition-all text-left ${
+                                brixFilter === 'sedang' ? 'bg-amber-100/80 font-bold' : 'hover:bg-slate-50'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-sm"></span>
+                                <span className="text-slate-700 text-xs font-medium">Transisi Menjelang Panen</span>
+                            </div>
+                            <span className="font-mono text-[10px] text-slate-500">15.0° - 19.0°</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setBrixFilter(brixFilter === 'tinggi' ? 'all' : 'tinggi')}
+                            className={`w-full flex items-center justify-between p-1.5 px-2 rounded-lg transition-all text-left ${
+                                brixFilter === 'tinggi' ? 'bg-rose-100/80 font-bold' : 'hover:bg-slate-50'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shadow-sm"></span>
+                                <span className="text-slate-700 text-xs font-medium">Optimum Siap Tebang</span>
+                            </div>
+                            <span className="font-mono text-[10px] text-slate-500">&gt; 19.0°</span>
+                        </button>
+                    </div>
+
+                </div>
+
             </div>
 
         </div>
