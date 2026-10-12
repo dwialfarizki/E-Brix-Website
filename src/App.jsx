@@ -202,9 +202,9 @@ function App() {
         <div className="absolute top-6 inset-x-8 max-w-5xl mx-auto hidden md:flex items-center justify-between text-[11px] font-mono text-emerald-500/70 select-none">
           <span className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-beacon" />
-            E-BRIX GEODETIC SENSOR NETWORK • REV 2.6
+            SISTEM PEMANTAUAN KEMASAKAN TEBU E-BRIX
           </span>
-          <span>LAT -6.7111° • LON 108.4312° • CANE HARVEST CAMPAIGN 2026</span>
+          <span>PORTAL MONITORING • MUSIM TANAM 2026</span>
         </div>
 
         {/* Glassmorphic Portal Container */}
@@ -263,8 +263,8 @@ function App() {
                   <div className="font-mono font-bold text-emerald-400 text-sm mt-0.5">&gt; 19.0° Bx</div>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-md">
-                  <div className="text-[10px] font-mono text-slate-400">RESOLUSI SPASIAL</div>
-                  <div className="font-mono font-bold text-teal-300 text-sm mt-0.5">Sub-Meter RTK</div>
+                  <div className="text-[10px] font-mono text-slate-400">KOORDINAT SPASIAL</div>
+                  <div className="font-mono font-bold text-teal-300 text-sm mt-0.5">GPS WGS84</div>
                 </div>
               </div>
             </div>
@@ -410,7 +410,7 @@ function App() {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 KONEKSI AMAN SSL
               </span>
-              <span>VERSI 2.6.0 PRO</span>
+              <span>SISTEM E-BRIX</span>
             </div>
 
           </div>

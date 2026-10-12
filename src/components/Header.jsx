@@ -17,9 +17,8 @@ export default function Header({ activeTab }) {
     switch (activeTab) {
       case 'peta':
         return { 
-          title: 'Geospatial Radar & Peta Sebaran Brix',
-          tag: 'MONITORING REALTIME',
-          description: 'Visualisasi spasial kadar kemasakan nira tebu berbasis satelit & sensor optik',
+          title: 'Dashboard Monitoring Brix',
+          tag: 'DASHBOARD PETA',
           icon: (
             <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -28,9 +27,8 @@ export default function Header({ activeTab }) {
         };
       case 'analisis':
         return { 
-          title: 'Pusat Analisis & Tren Kemasakan Brix',
-          tag: 'AGRO-INTELLIGENCE',
-          description: 'Estimasi kurva kematangan tebu, distribusi statistik, dan riwayat uji lapangan',
+          title: 'Pusat Analisis Data',
+          tag: 'ANALISIS DATA',
           icon: (
             <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -39,9 +37,8 @@ export default function Header({ activeTab }) {
         };
       case 'tambah_blok':
         return { 
-          title: 'Manajemen Wilayah & Geometri Lahan',
-          tag: 'SPATIAL GIS CAD',
-          description: 'Digitasi poligon blok kebun, batas kepemilikan, dan import shapefile ESRI/GeoJSON',
+          title: 'Manajemen Pemetaan Wilayah',
+          tag: 'MANAJEMEN WILAYAH',
           icon: (
             <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -50,9 +47,8 @@ export default function Header({ activeTab }) {
         };
       case 'kelola_petani':
         return { 
-          title: 'Otorisasi & Manajemen Petugas Lapangan',
-          tag: 'ACCESS CONTROL',
-          description: 'Verifikasi akun surveyor Brix, kontrol hak akses, dan audit aktivitas tim kebun',
+          title: 'Sistem Kelola Petugas',
+          tag: 'KELOLA PETUGAS',
           icon: (
             <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />

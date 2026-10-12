@@ -14,9 +14,9 @@ export default function Sidebar({
   const navItems = [
     {
       id: 'peta',
-      title: 'Geospatial Radar',
-      subtitle: 'Peta Brix & Kontur Lahan',
-      code: 'MAP',
+      title: 'Dashboard Peta',
+      subtitle: 'Peta Brix & Sebaran Lahan',
+      code: 'PETA',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -25,9 +25,9 @@ export default function Sidebar({
     },
     {
       id: 'analisis',
-      title: 'Telemetri Analisis',
-      subtitle: 'Tren Brix & Metrik Panen',
-      code: 'ANL',
+      title: 'Pusat Analisis Data',
+      subtitle: 'Tren Brix & Statistik',
+      code: 'DATA',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -36,9 +36,9 @@ export default function Sidebar({
     },
     {
       id: 'tambah_blok',
-      title: 'CAD Poligon & Blok',
-      subtitle: 'Batas Spasial & SHP Import',
-      code: 'GIS',
+      title: 'Manajemen Wilayah',
+      subtitle: 'Batas Lahan & Blok Petak',
+      code: 'BLOK',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -50,9 +50,9 @@ export default function Sidebar({
   if (userRole === 'admin') {
     navItems.push({
       id: 'kelola_petani',
-      title: 'Petugas & Akses',
-      subtitle: 'Otorisasi Surveyor Lapangan',
-      code: 'SEC',
+      title: 'Kelola Petugas',
+      subtitle: 'Otorisasi & Akun Lapangan',
+      code: 'USER',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -74,23 +74,11 @@ export default function Sidebar({
             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#07130e] animate-beacon" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <h1 className="text-lg font-black tracking-wider text-white">E-BRIX</h1>
-              <span className="text-[9px] font-mono px-1.5 py-0.2 bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 rounded font-bold">PRO</span>
-            </div>
+            <h1 className="text-xl font-black tracking-wider text-white">E-BRIX</h1>
             <p className="text-[10px] text-emerald-400/80 font-mono tracking-wider uppercase mt-0.5">
-              PRECISION AGRO-GIS
+              SISTEM MONITORING
             </p>
           </div>
-        </div>
-
-        {/* Live Satellite RTK Status Banner */}
-        <div className="mt-4 px-3 py-2 bg-emerald-950/60 rounded-xl border border-emerald-800/30 flex items-center justify-between text-[10px] font-mono">
-          <span className="flex items-center gap-2 text-emerald-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            TELEMETRI AKTIF
-          </span>
-          <span className="text-slate-400">RTK 2.6G</span>
         </div>
       </div>
 
@@ -98,7 +86,7 @@ export default function Sidebar({
       <div className="flex-1 px-4 py-5 overflow-y-auto space-y-6">
         <div>
           <div className="px-3 mb-2.5 text-[10px] font-mono tracking-widest text-emerald-500/70 uppercase font-bold">
-            Navigasi Spasial
+            Menu Navigasi
           </div>
 
           <div className="space-y-1.5">
@@ -162,10 +150,6 @@ export default function Sidebar({
             <p className="text-xs font-bold text-slate-200 capitalize truncate">
               {userRole === 'admin' ? 'Administrator' : 'Operator Kebun'}
             </p>
-            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              Level {userRole === 'admin' ? '01 - Root' : '02 - Lapangan'}
-            </span>
           </div>
         </div>
 
