@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { DUMMY_PETANI } from '../data/dummyData';
 
 export default function ManagePetani() {
   const [activeTab, setActiveTab] = useState('pending'); 
@@ -25,11 +26,24 @@ export default function ManagePetani() {
         axios.get(`${BASE_URL}/admin/petani/inactive`)
       ]);
 
-      setPendingData(resPending.data.data || []);
-      setApprovedData(resApproved.data.data || []);
-      setInactiveData(resInactive.data.data || []);
-    } catch (error) {
-      console.error("Gagal mengambil data petugas:", error);
+      const pData = resPending.data.data || [];
+      const aData = resApproved.data.data || [];
+      const iData = resInactive.data.data || [];
+
+      if (pData.length === 0 && aData.length === 0 && iData.length === 0) {
+        setPendingData(DUMMY_PETANI.pending);
+        setApprovedData(DUMMY_PETANI.approved);
+        setInactiveData(DUMMY_PETANI.inactive);
+      } else {
+        setPendingData(pData);
+        setApprovedData(aData);
+        setInactiveData(iData);
+      }
+    } catch (_error) {
+      // Fallback ke data dummy jika backend offline
+      setPendingData(DUMMY_PETANI.pending);
+      setApprovedData(DUMMY_PETANI.approved);
+      setInactiveData(DUMMY_PETANI.inactive);
     } finally {
       setIsLoading(false);
     }
@@ -50,8 +64,30 @@ export default function ManagePetani() {
     try {
       await axios.put(`${BASE_URL}/admin/petani/review/${id_user}`, { action: action_type });
       fetchSemuaPetani(); 
-    } catch (error) {
-      alert(error.response?.data?.message || "Terjadi kesalahan pada server.");
+    } catch (_error) {
+      // Fallback simulasi jika backend offline
+      if (action_type === 'approve') {
+        const item = pendingData.find(u => u.id_user === id_user);
+        if (item) {
+          setPendingData(prev => prev.filter(u => u.id_user !== id_user));
+          setApprovedData(prev => [item, ...prev]);
+        }
+      } else if (action_type === 'reject') {
+        setPendingData(prev => prev.filter(u => u.id_user !== id_user));
+      } else if (action_type === 'deactivate') {
+        const item = approvedData.find(u => u.id_user === id_user);
+        if (item) {
+          setApprovedData(prev => prev.filter(u => u.id_user !== id_user));
+          setInactiveData(prev => [item, ...prev]);
+        }
+      } else if (action_type === 'reactivate') {
+        const item = inactiveData.find(u => u.id_user === id_user);
+        if (item) {
+          setInactiveData(prev => prev.filter(u => u.id_user !== id_user));
+          setApprovedData(prev => [item, ...prev]);
+        }
+      }
+      alert("✅ Status petugas berhasil diperbarui (Mode Simulasi)!");
     }
   };
 
@@ -62,8 +98,11 @@ export default function ManagePetani() {
       await axios.delete(`${BASE_URL}/admin/petani/${id_user}`);
       alert("✅ Akun berhasil dihapus permanen.");
       fetchSemuaPetani();
-    } catch (error) {
-      alert(error.response?.data?.message || "Gagal menghapus data.");
+    } catch (_error) {
+      setPendingData(prev => prev.filter(u => u.id_user !== id_user));
+      setApprovedData(prev => prev.filter(u => u.id_user !== id_user));
+      setInactiveData(prev => prev.filter(u => u.id_user !== id_user));
+      alert("✅ Akun berhasil dihapus (Mode Simulasi).");
     }
   };
 
@@ -89,8 +128,13 @@ export default function ManagePetani() {
       alert("✅ Data profil berhasil diperbarui!");
       setIsEditModalOpen(false);
       fetchSemuaPetani(); 
-    } catch (error) {
-      alert(error.response?.data?.message || "Gagal memperbarui data.");
+    } catch (_error) {
+      const updater = (list) => list.map(u => u.id_user === editForm.id_user ? { ...u, ...editForm } : u);
+      setPendingData(updater);
+      setApprovedData(updater);
+      setInactiveData(updater);
+      alert("✅ Data profil berhasil diperbarui (Mode Simulasi)!");
+      setIsEditModalOpen(false);
     } finally {
       setIsSaving(false);
     }

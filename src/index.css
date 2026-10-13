@@ -120,8 +120,17 @@ body, html {
   background-color: #f1f5f9 !important;
 }
 
-.mapboxgl-popup-tip {
-  border-top-color: rgba(255, 255, 255, 0.96) !important;
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.98) !important;
+}
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+  border-bottom-color: rgba(255, 255, 255, 0.98) !important;
+}
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+  border-right-color: rgba(255, 255, 255, 0.98) !important;
+}
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+  border-left-color: rgba(255, 255, 255, 0.98) !important;
 }
 
 /* Glowing Beacon Animation */

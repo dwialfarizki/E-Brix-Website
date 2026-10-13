@@ -22,6 +22,16 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, _setAc
 
   const fileInputRef = useRef(null);
 
+  // Auto-resize Mapbox when container size changes
+  useEffect(() => {
+    if (!drawMapContainer.current) return;
+    const observer = new ResizeObserver(() => {
+      drawMap.current?.resize();
+    });
+    observer.observe(drawMapContainer.current);
+    return () => observer.disconnect();
+  }, []);
+
   const dapatkanKoordinatTerbang = (geometry) => {
     if (!geometry || !geometry.coordinates) return null;
     try {
@@ -425,10 +435,10 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, _setAc
       </div>
 
       {/* WORKSPACE DUA KOLOM: MAP CANVAS + CAD FORM */}
-      <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-[580px]">
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-[700px] xl:min-h-[760px]">
         
         {/* SISI KIRI: MAP VIEWPORT CAD */}
-        <div className="flex-1 bg-white p-2 rounded-2xl shadow-sm border border-slate-200/90 relative overflow-hidden min-h-[420px]">
+        <div className="flex-1 bg-white p-2 rounded-2xl shadow-sm border border-slate-200/90 relative overflow-hidden min-h-[580px] xl:min-h-[660px]">
           <div ref={drawMapContainer} className="absolute inset-0 w-full h-full rounded-xl overflow-hidden" />
           
           {/* Overlay Hint Top Left */}

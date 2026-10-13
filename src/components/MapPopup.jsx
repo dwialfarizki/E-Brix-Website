@@ -104,6 +104,7 @@ export default function MapPopup({
       {onDelete && (
         <div className="pt-2 border-t border-slate-100">
           <button 
+            type="button"
             onClick={onDelete}
             className="w-full py-1.5 px-3 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 transition-all duration-200 flex items-center justify-center gap-1.5"
           >

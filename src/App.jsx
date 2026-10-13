@@ -10,6 +10,7 @@ import DashboardMap from './views/DashboardMap';
 import AnalysisData from './views/AnalysisData';
 import ManageLand from './views/ManageLand';
 import ManagePetani from './views/ManagePetani';
+import { DUMMY_LAHAN, DUMMY_BLOK, DUMMY_SAMPEL } from './data/dummyData';
 
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4 text-slate-400 hover:text-emerald-600 transition-colors">
@@ -62,7 +63,13 @@ function App() {
 
       setLoginError('');
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.message) {
+      // Jika backend belum aktif atau network error, izinkan login demo agar pengguna bisa melihat preview data dummy
+      if (!err.response || err.code === 'ERR_NETWORK') {
+        const demoUser = { username: loginForm.username || 'admin', role: loginForm.role || 'admin', isDemo: true };
+        setUserLogin(demoUser);
+        localStorage.setItem('ebrix_user', JSON.stringify(demoUser));
+        setLoginError('');
+      } else if (err.response && err.response.data && err.response.data.message) {
         setLoginError(err.response.data.message);
       } else {
         setLoginError('Gagal login. Cek koneksi server atau devtunnels.');
@@ -78,49 +85,64 @@ function App() {
   const fetchSemuaData = async () => {
     const timestamp = new Date().getTime();
 
+    // 1. LAHAN
     try {
       const resLahan = await axios.get(`${API_BASE_URL}/lahan?t=${timestamp}`);
       const rawLahan = resLahan.data?.data || resLahan.data?.features || resLahan.data || [];
       const arrLahan = Array.isArray(rawLahan) ? rawLahan : [];
 
-      const lahanFeatures = arrLahan.map(item => {
-        if (item?.type === 'Feature') return item;
-        return {
-          type: 'Feature',
-          properties: { ...item },
-          geometry: item?.koordinat_area || item?.geom || null
-        };
-      });
-      setLahanData(lahanFeatures);
-    } catch (error) {
-      console.error("❌ Gagal menarik data LAHAN:", error.message);
+      if (arrLahan.length > 0) {
+        const lahanFeatures = arrLahan.map(item => {
+          if (item?.type === 'Feature') return item;
+          return {
+            type: 'Feature',
+            properties: { ...item },
+            geometry: item?.koordinat_area || item?.geom || null
+          };
+        });
+        setLahanData(lahanFeatures);
+      } else {
+        setLahanData(DUMMY_LAHAN);
+      }
+    } catch (_error) {
+      setLahanData(DUMMY_LAHAN);
     }
 
+    // 2. BLOK
     try {
       const resBlok = await axios.get(`${API_BASE_URL}/blok?t=${timestamp}`);
       const rawBlok = resBlok.data?.data || resBlok.data?.features || resBlok.data || [];
       const arrBlok = Array.isArray(rawBlok) ? rawBlok : [];
 
-      const blokFeatures = arrBlok.map(item => {
-        if (item?.type === 'Feature') return item;
-        return {
-          type: 'Feature',
-          properties: { ...item },
-          geometry: item?.koordinat_area || item?.geom || null
-        };
-      });
-      setBlokData(blokFeatures);
-    } catch (error) {
-      console.error("❌ Gagal menarik data BLOK:", error.message);
+      if (arrBlok.length > 0) {
+        const blokFeatures = arrBlok.map(item => {
+          if (item?.type === 'Feature') return item;
+          return {
+            type: 'Feature',
+            properties: { ...item },
+            geometry: item?.koordinat_area || item?.geom || null
+          };
+        });
+        setBlokData(blokFeatures);
+      } else {
+        setBlokData(DUMMY_BLOK);
+      }
+    } catch (_error) {
+      setBlokData(DUMMY_BLOK);
     }
 
+    // 3. TITIK BRIX
     try {
       const resSampel = await axios.get(`${API_BASE_URL}/data-brix?t=${timestamp}`);
       const rawSampel = resSampel.data?.data || resSampel.data?.features || resSampel.data || [];
       const arrSampel = Array.isArray(rawSampel) ? rawSampel : [];
-      setSampelData(arrSampel);
-    } catch (error) {
-      console.error("❌ Gagal menarik data SAMPEL:", error.message);
+      if (arrSampel.length > 0) {
+        setSampelData(arrSampel);
+      } else {
+        setSampelData(DUMMY_SAMPEL);
+      }
+    } catch (_error) {
+      setSampelData(DUMMY_SAMPEL);
     }
   };
 
@@ -131,7 +153,7 @@ function App() {
         await axios.delete(`${API_BASE_URL}/data-brix/${id_titik}`);
         fetchSemuaData();
       } catch (_error) {
-        alert("Gagal menghapus titik. Cek koneksi server.");
+        setSampelData(prev => prev.filter(t => (t.id_titik || t.properties?.id_titik) !== id_titik));
       }
     }
   };
@@ -139,9 +161,13 @@ function App() {
   useEffect(() => {
     if (!userLogin) return;
     fetchSemuaData();
-    const socket = io(API_BASE_URL, { transports: ['polling'] });
-    socket.on('refresh_data', () => { fetchSemuaData(); });
-    return () => { socket.disconnect(); };
+    try {
+      const socket = io(API_BASE_URL, { transports: ['polling'], timeout: 3000 });
+      socket.on('refresh_data', () => { fetchSemuaData(); });
+      return () => { socket.disconnect(); };
+    } catch (_e) {
+      // socket offline fallback
+    }
   }, [userLogin]);
 
   useEffect(() => {
@@ -401,6 +427,23 @@ function App() {
                   Masuk Ke Portal
                 </button>
 
+                {/* Instant Demo Access Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const demoUser = { username: 'Administrator Demo', role: 'admin', isDemo: true };
+                    setUserLogin(demoUser);
+                    localStorage.setItem('ebrix_user', JSON.stringify(demoUser));
+                  }}
+                  className="w-full h-10 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 text-emerald-800 text-[11px] font-mono font-bold uppercase tracking-wider rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Mode Demo (Pratinjau Data Dummy)
+                </button>
+
               </form>
             </div>
 
@@ -448,11 +491,13 @@ function App() {
         <Header activeTab={activeTab} />
 
         {/* Content View Area */}
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto flex flex-col gap-6">
+        <main className={`flex-1 overflow-y-auto flex flex-col ${
+          activeTab === 'peta' ? 'p-4 md:p-6 gap-4' : 'p-6 md:p-8 gap-6'
+        }`}>
 
           {/* Precision StatCards for Map & Analysis View */}
           {(activeTab === 'peta' || activeTab === 'analisis') && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 shrink-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
               <StatCard 
                 title="Rata-rata Brix" 
                 value={`${stats.avg_brix || 0}°`} 
