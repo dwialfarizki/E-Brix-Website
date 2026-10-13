@@ -153,7 +153,10 @@ function App() {
         await axios.delete(`${API_BASE_URL}/data-brix/${id_titik}`);
         fetchSemuaData();
       } catch (_error) {
-        setSampelData(prev => prev.filter(t => (t.id_titik || t.properties?.id_titik) !== id_titik));
+        setSampelData(prev => prev.filter(t => {
+          const itemKey = t.id_titik || t.properties?.id_titik || t.properties?.id_data || t.id_data || t.id || t.properties?.id;
+          return String(itemKey) !== String(id_titik);
+        }));
       }
     }
   };
@@ -557,6 +560,8 @@ function App() {
               sampelData={sampelData}
               blokData={blokData}
               lahanData={lahanData}
+              setSampelData={setSampelData}
+              onDeletePoin={handleDeletePoin}
             />
           )}
 
