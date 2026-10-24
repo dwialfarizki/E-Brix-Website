@@ -45,6 +45,16 @@ export default function Header({ activeTab }) {
             </svg>
           )
         };
+      case 'prediksi_ai':
+        return { 
+          title: 'Prediksi Cerdas & Kualitas Gula AI',
+          tag: 'PREDIKSI AI',
+          icon: (
+            <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          )
+        };
       case 'kelola_petani':
         return { 
           title: 'Sistem Kelola Petugas',

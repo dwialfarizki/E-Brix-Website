@@ -40,7 +40,8 @@ export default function AnalysisData({
   selectedBlok, 
   lahanData = [],
   setSampelData,
-  onDeletePoin
+  onDeletePoin,
+  setActiveTab
 }) {
   const [filters, setFilters] = useState({
     nama_lahan: '',
@@ -547,6 +548,38 @@ export default function AnalysisData({
 
   return (
     <div className="flex flex-col gap-6 w-full h-full">
+
+      {/* QUICK BRIDGE TO AI PREDICTION */}
+      {setActiveTab && (
+        <div className="bg-gradient-to-r from-[#081a13] via-[#0d281e] to-[#071711] p-4 sm:p-5 rounded-2xl border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
+          <div className="flex items-center gap-3.5 relative z-10">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl border border-emerald-400/30 shrink-0 shadow-inner">
+              ⚡
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-extrabold text-white tracking-wide">
+                  Simulasi Panen & Proyeksi Mutu Gula AI
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/40">
+                  AI PREDICTION
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Uji skenario iklim, irigasi, dan varietas tebu dengan Model Machine Learning Ensemble Tuned (&gt;90% akurasi).
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('prediksi_ai')}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 transition shadow-lg shadow-emerald-700/20 flex items-center gap-2 shrink-0 cursor-pointer active:scale-95"
+          >
+            <span>Buka Simulasi AI</span>
+            <span className="text-sm">→</span>
+          </button>
+        </div>
+      )}
 
       {/* ======================= CHART ROW ======================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[380px]">

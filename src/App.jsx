@@ -10,6 +10,7 @@ import DashboardMap from './views/DashboardMap';
 import AnalysisData from './views/AnalysisData';
 import ManageLand from './views/ManageLand';
 import ManagePetani from './views/ManagePetani';
+import PredictionAI from './views/PredictionAI';
 import { DUMMY_LAHAN, DUMMY_BLOK, DUMMY_SAMPEL } from './data/dummyData';
 
 const EyeIcon = () => (
@@ -562,7 +563,12 @@ function App() {
               lahanData={lahanData}
               setSampelData={setSampelData}
               onDeletePoin={handleDeletePoin}
+              setActiveTab={setActiveTab}
             />
+          )}
+
+          {activeTab === 'prediksi_ai' && (
+            <PredictionAI />
           )}
 
           {activeTab === 'tambah_blok' && (
