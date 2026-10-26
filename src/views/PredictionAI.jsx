@@ -200,7 +200,7 @@ export default function PredictionAI() {
   // Ambil data status dan riwayat dari backend
   const fetchHealthAndHistory = async () => {
     try {
-      const res = await axios.get(`${ML_API_BASE_URL}/history`, { timeout: 3500 });
+      const res = await axios.get(`${ML_API_BASE_URL}/ml/history`, { timeout: 3500 });
       if (res.data?.success) {
         setServerStatus('online');
         setHistoryList(res.data.history || []);
@@ -285,7 +285,7 @@ export default function PredictionAI() {
     setFeedback(null);
 
     try {
-      const res = await axios.post(`${ML_API_BASE_URL}/predict`, form, {
+      const res = await axios.post(`${ML_API_BASE_URL}/ml/predict`, form, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 5000
       });
@@ -308,7 +308,7 @@ export default function PredictionAI() {
       setServerStatus('offline');
       setFeedback({ 
         type: 'info', 
-        text: 'Prediksi dihitung melalui Simulator Presisi Lokal E-Brix (Port 5005 offline).' 
+        text: 'Prediksi dihitung melalui Simulator Presisi Lokal E-Brix (Backend offline).' 
       });
     } finally {
       setIsSubmitting(false);
@@ -318,7 +318,7 @@ export default function PredictionAI() {
 
   const handleDeleteHistory = async (id) => {
     try {
-      await axios.delete(`${ML_API_BASE_URL}/history/${id}`);
+      await axios.delete(`${ML_API_BASE_URL}/ml/history/${id}`);
       setHistoryList(prev => prev.filter(item => item.id !== id));
     } catch (_err) {
       setHistoryList(prev => prev.filter(item => item.id !== id));
