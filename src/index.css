@@ -148,3 +148,58 @@ body, html {
 .animate-beacon {
   animation: beaconPulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Fix Mapbox Navigation & Draw Controls (mencegah tombol zoom terpotong oleh sudut container) */
+.mapboxgl-ctrl-top-right {
+  top: 20px !important;
+  right: 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  z-index: 20 !important;
+  pointer-events: auto !important;
+}
+
+.mapboxgl-ctrl-top-right .mapboxgl-ctrl {
+  margin: 0 !important;
+  float: none !important;
+}
+
+.mapboxgl-ctrl-group {
+  border-radius: 8px !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  overflow: hidden !important;
+}
+
+.mapboxgl-ctrl-group button {
+  width: 36px !important;
+  height: 36px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #ffffff !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.mapboxgl-ctrl-group button + button {
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+.mapboxgl-ctrl-group button:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
+  width: 100% !important;
+  height: 100% !important;
+  background-size: 20px 20px !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}

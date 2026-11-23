@@ -1,5 +1,5 @@
 // Data dummy realistis untuk simulasi visual E-BRIX ketika backend belum terhubung
-// Terletak di koordinat perkebunan tebu Jatitujuh / Majalengka / Cirebon [108.4312, -6.7111]
+// Terletak di koordinat perkebunan tebu Jatitujuh / Majalengka / Cirebon [108.2386, -6.6135]
 
 export const DUMMY_LAHAN = [
   {
@@ -14,11 +14,11 @@ export const DUMMY_LAHAN = [
     geometry: {
       type: 'Polygon',
       coordinates: [[
-        [108.4265, -6.7075],
-        [108.4375, -6.7075],
-        [108.4375, -6.7165],
-        [108.4265, -6.7165],
-        [108.4265, -6.7075]
+        [108.2339, -6.5912],
+        [108.2449, -6.5912],
+        [108.2449, -6.6002],
+        [108.2339, -6.6002],
+        [108.2339, -6.5912]
       ]]
     }
   },
@@ -34,11 +34,11 @@ export const DUMMY_LAHAN = [
     geometry: {
       type: 'Polygon',
       coordinates: [[
-        [108.4315, -6.7168],
-        [108.4390, -6.7168],
-        [108.4390, -6.7230],
-        [108.4315, -6.7230],
-        [108.4315, -6.7168]
+        [108.2389, -6.6005],
+        [108.2464, -6.6005],
+        [108.2464, -6.6067],
+        [108.2389, -6.6067],
+        [108.2389, -6.6005]
       ]]
     }
   }
@@ -59,11 +59,11 @@ export const DUMMY_BLOK = [
     geometry: {
       type: 'Polygon',
       coordinates: [[
-        [108.4275, -6.7085],
-        [108.4318, -6.7085],
-        [108.4318, -6.7118],
-        [108.4275, -6.7118],
-        [108.4275, -6.7085]
+        [108.2349, -6.5922],
+        [108.2392, -6.5922],
+        [108.2392, -6.5955],
+        [108.2349, -6.5955],
+        [108.2349, -6.5922]
       ]]
     }
   },
@@ -81,11 +81,11 @@ export const DUMMY_BLOK = [
     geometry: {
       type: 'Polygon',
       coordinates: [[
-        [108.4322, -6.7085],
-        [108.4368, -6.7085],
-        [108.4368, -6.7118],
-        [108.4322, -6.7118],
-        [108.4322, -6.7085]
+        [108.2396, -6.5922],
+        [108.2442, -6.5922],
+        [108.2442, -6.5955],
+        [108.2396, -6.5955],
+        [108.2396, -6.5922]
       ]]
     }
   },
@@ -103,11 +103,11 @@ export const DUMMY_BLOK = [
     geometry: {
       type: 'Polygon',
       coordinates: [[
-        [108.4275, -6.7124],
-        [108.4318, -6.7124],
-        [108.4318, -6.7158],
-        [108.4275, -6.7158],
-        [108.4275, -6.7124]
+        [108.2349, -6.5961],
+        [108.2392, -6.5961],
+        [108.2392, -6.5995],
+        [108.2349, -6.5995],
+        [108.2349, -6.5961]
       ]]
     }
   },
@@ -125,11 +125,11 @@ export const DUMMY_BLOK = [
     geometry: {
       type: 'Polygon',
       coordinates: [[
-        [108.4322, -6.7175],
-        [108.4382, -6.7175],
-        [108.4382, -6.7215],
-        [108.4322, -6.7215],
-        [108.4322, -6.7175]
+        [108.2396, -6.6012],
+        [108.2456, -6.6012],
+        [108.2456, -6.6052],
+        [108.2396, -6.6052],
+        [108.2396, -6.6012]
       ]]
     }
   }
@@ -145,11 +145,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Ahmad Fauzi',
     jenis_tebu: 'Bululawang (BL)',
     metode_input: 'Otomatis',
-    latitude: -6.7088,
-    longitude: 108.4282,
+    latitude: -6.5925,
+    longitude: 108.2356,
     waktu_pengukuran: '2026-10-08T08:30:00Z',
     properties: { id_titik: 'SMP-001', id_blok: '101', nilai_brix: 12.8, nama_petani: 'Ahmad Fauzi', jenis_tebu: 'Bululawang (BL)', metode_input: 'Otomatis', created_at: '2026-10-08T08:30:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4282, -6.7088] }
+    geometry: { type: 'Point', coordinates: [108.2356, -6.5925] }
   },
   {
     type: 'Feature',
@@ -159,11 +159,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Ahmad Fauzi',
     jenis_tebu: 'Bululawang (BL)',
     metode_input: 'Manual',
-    latitude: -6.7092,
-    longitude: 108.4296,
+    latitude: -6.5929,
+    longitude: 108.2370,
     waktu_pengukuran: '2026-10-08T09:15:00Z',
     properties: { id_titik: 'SMP-002', id_blok: '101', nilai_brix: 13.5, nama_petani: 'Ahmad Fauzi', jenis_tebu: 'Bululawang (BL)', metode_input: 'Manual', created_at: '2026-10-08T09:15:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4296, -6.7092] }
+    geometry: { type: 'Point', coordinates: [108.2370, -6.5929] }
   },
   {
     type: 'Feature',
@@ -173,11 +173,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Hendra Wijaya',
     jenis_tebu: 'Bululawang (BL)',
     metode_input: 'Otomatis',
-    latitude: -6.7096,
-    longitude: 108.4286,
+    latitude: -6.5933,
+    longitude: 108.2360,
     waktu_pengukuran: '2026-10-09T08:00:00Z',
     properties: { id_titik: 'SMP-003', id_blok: '101', nilai_brix: 14.1, nama_petani: 'Hendra Wijaya', jenis_tebu: 'Bululawang (BL)', metode_input: 'Otomatis', created_at: '2026-10-09T08:00:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4286, -6.7096] }
+    geometry: { type: 'Point', coordinates: [108.2360, -6.5933] }
   },
   {
     type: 'Feature',
@@ -187,11 +187,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Budi Santoso',
     jenis_tebu: 'PS 881',
     metode_input: 'Manual',
-    latitude: -6.7090,
-    longitude: 108.4355,
+    latitude: -6.5927,
+    longitude: 108.2429,
     waktu_pengukuran: '2026-10-09T08:45:00Z',
     properties: { id_titik: 'SMP-004', id_blok: '102', nilai_brix: 13.9, nama_petani: 'Budi Santoso', jenis_tebu: 'PS 881', metode_input: 'Manual', created_at: '2026-10-09T08:45:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4355, -6.7090] }
+    geometry: { type: 'Point', coordinates: [108.2429, -6.5927] }
   },
   {
     type: 'Feature',
@@ -201,11 +201,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Budi Santoso',
     jenis_tebu: 'PS 881',
     metode_input: 'Otomatis',
-    latitude: -6.7097,
-    longitude: 108.4362,
+    latitude: -6.5934,
+    longitude: 108.2436,
     waktu_pengukuran: '2026-10-09T09:20:00Z',
     properties: { id_titik: 'SMP-005', id_blok: '102', nilai_brix: 14.6, nama_petani: 'Budi Santoso', jenis_tebu: 'PS 881', metode_input: 'Otomatis', created_at: '2026-10-09T09:20:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4362, -6.7097] }
+    geometry: { type: 'Point', coordinates: [108.2436, -6.5934] }
   },
   {
     type: 'Feature',
@@ -215,11 +215,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Siti Rahma',
     jenis_tebu: 'Kidang Kencana',
     metode_input: 'Manual',
-    latitude: -6.7152,
-    longitude: 108.4285,
+    latitude: -6.5989,
+    longitude: 108.2359,
     waktu_pengukuran: '2026-10-09T10:00:00Z',
     properties: { id_titik: 'SMP-006', id_blok: '103', nilai_brix: 13.2, nama_petani: 'Siti Rahma', jenis_tebu: 'Kidang Kencana', metode_input: 'Manual', created_at: '2026-10-09T10:00:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4285, -6.7152] }
+    geometry: { type: 'Point', coordinates: [108.2359, -6.5989] }
   },
   {
     type: 'Feature',
@@ -229,11 +229,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Hendra Wijaya',
     jenis_tebu: 'Kidang Kencana',
     metode_input: 'Otomatis',
-    latitude: -6.7150,
-    longitude: 108.4312,
+    latitude: -6.5987,
+    longitude: 108.2386,
     waktu_pengukuran: '2026-10-09T10:30:00Z',
     properties: { id_titik: 'SMP-007', id_blok: '103', nilai_brix: 14.4, nama_petani: 'Hendra Wijaya', jenis_tebu: 'Kidang Kencana', metode_input: 'Otomatis', created_at: '2026-10-09T10:30:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4312, -6.7150] }
+    geometry: { type: 'Point', coordinates: [108.2386, -6.5987] }
   },
 
   // --- ZONA TRANSISI: BRIX SEDANG (15.0° - 19.0° - ORANYE / AMBER) ---
@@ -245,11 +245,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Ahmad Fauzi',
     jenis_tebu: 'Bululawang (BL)',
     metode_input: 'Otomatis',
-    latitude: -6.7102,
-    longitude: 108.4305,
+    latitude: -6.5939,
+    longitude: 108.2379,
     waktu_pengukuran: '2026-10-10T08:10:00Z',
     properties: { id_titik: 'SMP-008', id_blok: '101', nilai_brix: 16.2, nama_petani: 'Ahmad Fauzi', jenis_tebu: 'Bululawang (BL)', metode_input: 'Otomatis', created_at: '2026-10-10T08:10:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4305, -6.7102] }
+    geometry: { type: 'Point', coordinates: [108.2379, -6.5939] }
   },
   {
     type: 'Feature',
@@ -259,11 +259,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Ahmad Fauzi',
     jenis_tebu: 'Bululawang (BL)',
     metode_input: 'Manual',
-    latitude: -6.7110,
-    longitude: 108.4312,
+    latitude: -6.5947,
+    longitude: 108.2386,
     waktu_pengukuran: '2026-10-10T08:45:00Z',
     properties: { id_titik: 'SMP-009', id_blok: '101', nilai_brix: 17.4, nama_petani: 'Ahmad Fauzi', jenis_tebu: 'Bululawang (BL)', metode_input: 'Manual', created_at: '2026-10-10T08:45:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4312, -6.7110] }
+    geometry: { type: 'Point', coordinates: [108.2386, -6.5947] }
   },
   {
     type: 'Feature',
@@ -273,11 +273,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Budi Santoso',
     jenis_tebu: 'PS 881',
     metode_input: 'Otomatis',
-    latitude: -6.7098,
-    longitude: 108.4330,
+    latitude: -6.5935,
+    longitude: 108.2404,
     waktu_pengukuran: '2026-10-10T09:15:00Z',
     properties: { id_titik: 'SMP-010', id_blok: '102', nilai_brix: 16.8, nama_petani: 'Budi Santoso', jenis_tebu: 'PS 881', metode_input: 'Otomatis', created_at: '2026-10-10T09:15:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4330, -6.7098] }
+    geometry: { type: 'Point', coordinates: [108.2404, -6.5935] }
   },
   {
     type: 'Feature',
@@ -287,11 +287,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Budi Santoso',
     jenis_tebu: 'PS 881',
     metode_input: 'Manual',
-    latitude: -6.7102,
-    longitude: 108.4342,
+    latitude: -6.5939,
+    longitude: 108.2416,
     waktu_pengukuran: '2026-10-10T09:50:00Z',
     properties: { id_titik: 'SMP-011', id_blok: '102', nilai_brix: 18.2, nama_petani: 'Budi Santoso', jenis_tebu: 'PS 881', metode_input: 'Manual', created_at: '2026-10-10T09:50:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4342, -6.7102] }
+    geometry: { type: 'Point', coordinates: [108.2416, -6.5939] }
   },
   {
     type: 'Feature',
@@ -301,11 +301,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Hendra Wijaya',
     jenis_tebu: 'Kidang Kencana',
     metode_input: 'Otomatis',
-    latitude: -6.7130,
-    longitude: 108.4292,
+    latitude: -6.5967,
+    longitude: 108.2366,
     waktu_pengukuran: '2026-10-10T10:15:00Z',
     properties: { id_titik: 'SMP-012', id_blok: '103', nilai_brix: 16.5, nama_petani: 'Hendra Wijaya', jenis_tebu: 'Kidang Kencana', metode_input: 'Otomatis', created_at: '2026-10-10T10:15:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4292, -6.7130] }
+    geometry: { type: 'Point', coordinates: [108.2366, -6.5967] }
   },
   {
     type: 'Feature',
@@ -315,11 +315,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Hendra Wijaya',
     jenis_tebu: 'Kidang Kencana',
     metode_input: 'Manual',
-    latitude: -6.7138,
-    longitude: 108.4308,
+    latitude: -6.5975,
+    longitude: 108.2382,
     waktu_pengukuran: '2026-10-10T11:00:00Z',
     properties: { id_titik: 'SMP-013', id_blok: '103', nilai_brix: 17.8, nama_petani: 'Hendra Wijaya', jenis_tebu: 'Kidang Kencana', metode_input: 'Manual', created_at: '2026-10-10T11:00:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4308, -6.7138] }
+    geometry: { type: 'Point', coordinates: [108.2382, -6.5975] }
   },
   {
     type: 'Feature',
@@ -329,11 +329,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Siti Rahma',
     jenis_tebu: 'Kidang Kencana',
     metode_input: 'Otomatis',
-    latitude: -6.7142,
-    longitude: 108.4315,
+    latitude: -6.5979,
+    longitude: 108.2389,
     waktu_pengukuran: '2026-10-10T11:45:00Z',
     properties: { id_titik: 'SMP-014', id_blok: '103', nilai_brix: 18.5, nama_petani: 'Siti Rahma', jenis_tebu: 'Kidang Kencana', metode_input: 'Otomatis', created_at: '2026-10-10T11:45:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4315, -6.7142] }
+    geometry: { type: 'Point', coordinates: [108.2389, -6.5979] }
   },
 
   // --- ZONA INTI MATANG (HOTSPOT): BRIX TINGGI (> 19.0° - MERAH SIAP PANEN) ---
@@ -345,11 +345,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Ahmad Fauzi',
     jenis_tebu: 'Bululawang (BL)',
     metode_input: 'Otomatis',
-    latitude: -6.7115,
-    longitude: 108.4314,
+    latitude: -6.5952,
+    longitude: 108.2388,
     waktu_pengukuran: '2026-10-11T08:00:00Z',
     properties: { id_titik: 'SMP-015', id_blok: '101', nilai_brix: 19.6, nama_petani: 'Ahmad Fauzi', jenis_tebu: 'Bululawang (BL)', metode_input: 'Otomatis', created_at: '2026-10-11T08:00:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4314, -6.7115] }
+    geometry: { type: 'Point', coordinates: [108.2388, -6.5952] }
   },
   {
     type: 'Feature',
@@ -359,11 +359,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Budi Santoso',
     jenis_tebu: 'PS 881',
     metode_input: 'Otomatis',
-    latitude: -6.7108,
-    longitude: 108.4326,
+    latitude: -6.5945,
+    longitude: 108.2400,
     waktu_pengukuran: '2026-10-11T08:30:00Z',
     properties: { id_titik: 'SMP-016', id_blok: '102', nilai_brix: 20.8, nama_petani: 'Budi Santoso', jenis_tebu: 'PS 881', metode_input: 'Otomatis', created_at: '2026-10-11T08:30:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4326, -6.7108] }
+    geometry: { type: 'Point', coordinates: [108.2400, -6.5945] }
   },
   {
     type: 'Feature',
@@ -373,11 +373,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Budi Santoso',
     jenis_tebu: 'PS 881',
     metode_input: 'Manual',
-    latitude: -6.7112,
-    longitude: 108.4334,
+    latitude: -6.5949,
+    longitude: 108.2408,
     waktu_pengukuran: '2026-10-11T09:00:00Z',
     properties: { id_titik: 'SMP-017', id_blok: '102', nilai_brix: 21.5, nama_petani: 'Budi Santoso', jenis_tebu: 'PS 881', metode_input: 'Manual', created_at: '2026-10-11T09:00:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4334, -6.7112] }
+    geometry: { type: 'Point', coordinates: [108.2408, -6.5949] }
   },
   {
     type: 'Feature',
@@ -387,11 +387,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Siti Rahma',
     jenis_tebu: 'PS 881',
     metode_input: 'Otomatis',
-    latitude: -6.7116,
-    longitude: 108.4345,
+    latitude: -6.5953,
+    longitude: 108.2419,
     waktu_pengukuran: '2026-10-11T09:30:00Z',
     properties: { id_titik: 'SMP-018', id_blok: '102', nilai_brix: 21.8, nama_petani: 'Siti Rahma', jenis_tebu: 'PS 881', metode_input: 'Otomatis', created_at: '2026-10-11T09:30:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4345, -6.7116] }
+    geometry: { type: 'Point', coordinates: [108.2419, -6.5953] }
   },
   {
     type: 'Feature',
@@ -401,11 +401,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Budi Santoso',
     jenis_tebu: 'PS 881',
     metode_input: 'Manual',
-    latitude: -6.7106,
-    longitude: 108.4350,
+    latitude: -6.5943,
+    longitude: 108.2424,
     waktu_pengukuran: '2026-10-11T10:00:00Z',
     properties: { id_titik: 'SMP-019', id_blok: '102', nilai_brix: 20.2, nama_petani: 'Budi Santoso', jenis_tebu: 'PS 881', metode_input: 'Manual', created_at: '2026-10-11T10:00:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4350, -6.7106] }
+    geometry: { type: 'Point', coordinates: [108.2424, -6.5943] }
   },
   {
     type: 'Feature',
@@ -415,11 +415,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Hendra Wijaya',
     jenis_tebu: 'Kidang Kencana',
     metode_input: 'Otomatis',
-    latitude: -6.7126,
-    longitude: 108.4312,
+    latitude: -6.5963,
+    longitude: 108.2386,
     waktu_pengukuran: '2026-10-11T10:30:00Z',
     properties: { id_titik: 'SMP-020', id_blok: '103', nilai_brix: 20.5, nama_petani: 'Hendra Wijaya', jenis_tebu: 'Kidang Kencana', metode_input: 'Otomatis', created_at: '2026-10-11T10:30:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4312, -6.7126] }
+    geometry: { type: 'Point', coordinates: [108.2386, -6.5963] }
   },
   {
     type: 'Feature',
@@ -429,11 +429,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Hendra Wijaya',
     jenis_tebu: 'Kidang Kencana',
     metode_input: 'Manual',
-    latitude: -6.7132,
-    longitude: 108.4316,
+    latitude: -6.5969,
+    longitude: 108.2390,
     waktu_pengukuran: '2026-10-11T11:15:00Z',
     properties: { id_titik: 'SMP-021', id_blok: '103', nilai_brix: 19.9, nama_petani: 'Hendra Wijaya', jenis_tebu: 'Kidang Kencana', metode_input: 'Manual', created_at: '2026-10-11T11:15:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4316, -6.7132] }
+    geometry: { type: 'Point', coordinates: [108.2390, -6.5969] }
   },
 
   // --- LAHAN 2: BLOK C-01 ---
@@ -445,11 +445,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Ahmad Fauzi',
     jenis_tebu: 'PS 862',
     metode_input: 'Manual',
-    latitude: -6.7188,
-    longitude: 108.4342,
+    latitude: -6.6025,
+    longitude: 108.2416,
     waktu_pengukuran: '2026-10-11T13:40:00Z',
     properties: { id_titik: 'SMP-022', id_blok: '104', nilai_brix: 13.8, nama_petani: 'Ahmad Fauzi', jenis_tebu: 'PS 862', metode_input: 'Manual', created_at: '2026-10-11T13:40:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4342, -6.7188] }
+    geometry: { type: 'Point', coordinates: [108.2416, -6.6025] }
   },
   {
     type: 'Feature',
@@ -459,11 +459,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Siti Rahma',
     jenis_tebu: 'PS 862',
     metode_input: 'Otomatis',
-    latitude: -6.7202,
-    longitude: 108.4365,
+    latitude: -6.6039,
+    longitude: 108.2439,
     waktu_pengukuran: '2026-10-12T07:15:00Z',
     properties: { id_titik: 'SMP-023', id_blok: '104', nilai_brix: 16.9, nama_petani: 'Siti Rahma', jenis_tebu: 'PS 862', metode_input: 'Otomatis', created_at: '2026-10-12T07:15:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4365, -6.7202] }
+    geometry: { type: 'Point', coordinates: [108.2439, -6.6039] }
   },
   {
     type: 'Feature',
@@ -473,11 +473,11 @@ export const DUMMY_SAMPEL = [
     nama_petani: 'Siti Rahma',
     jenis_tebu: 'PS 862',
     metode_input: 'Otomatis',
-    latitude: -6.7194,
-    longitude: 108.4355,
+    latitude: -6.6031,
+    longitude: 108.2429,
     waktu_pengukuran: '2026-10-12T08:00:00Z',
     properties: { id_titik: 'SMP-024', id_blok: '104', nilai_brix: 19.4, nama_petani: 'Siti Rahma', jenis_tebu: 'PS 862', metode_input: 'Otomatis', created_at: '2026-10-12T08:00:00Z' },
-    geometry: { type: 'Point', coordinates: [108.4355, -6.7194] }
+    geometry: { type: 'Point', coordinates: [108.2429, -6.6031] }
   }
 ];
 

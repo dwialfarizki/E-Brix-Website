@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import axios from 'axios';
 import * as turf from '@turf/turf'; 
 import shp from 'shpjs'; 
-import { API_BASE_URL, MAPBOX_TOKEN } from '../config';
+import { API_BASE_URL, MAPBOX_TOKEN, SATELLITE_MAP_STYLE } from '../config';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
@@ -137,8 +138,8 @@ export default function ManageLand({ blokData, lahanData, fetchSemuaData, _setAc
 
     drawMap.current = new mapboxgl.Map({
       container: drawMapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: [108.4312, -6.7111], 
+      style: SATELLITE_MAP_STYLE,
+      center: [108.2386, -6.5948], 
       zoom: 16,
       attributionControl: false
     });

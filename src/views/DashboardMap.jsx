@@ -4,7 +4,7 @@ import MapPopup from '../components/MapPopup';
 import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { API_BASE_URL, MAPBOX_TOKEN } from '../config';
+import { API_BASE_URL, MAPBOX_TOKEN, SATELLITE_MAP_STYLE } from '../config';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
@@ -71,8 +71,8 @@ const DashboardMap = ({
 
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/satellite-streets-v12',
-            center: [108.4312, -6.7111], 
+            style: SATELLITE_MAP_STYLE,
+            center: [108.2386, -6.5948], 
             zoom: 15,
             attributionControl: false
         });
@@ -187,6 +187,11 @@ const DashboardMap = ({
                     'line-width': 3.8
                 }
             });
+
+            // Posisikan layer nama tempat/daerah paling atas agar tidak tertutup heatmap & poligon
+            if (map.current.getLayer('carto-labels-layer')) {
+                map.current.moveLayer('carto-labels-layer');
+            }
 
             hoverPopupRef.current = new mapboxgl.Popup({
                 closeButton: false,
