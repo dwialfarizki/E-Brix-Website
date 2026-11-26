@@ -1,9 +1,11 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, ML_API_BASE_URL } from '../config';
 import { 
   AreaChart, 
   Area, 
+  LineChart,
+  Line,
   BarChart, 
   Bar, 
   XAxis, 
@@ -11,38 +13,143 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer, 
-  Cell 
+  Cell,
+  ReferenceLine
 } from 'recharts';
 
+const PETAK_LINE_COLORS = [
+  '#10b981', // Emerald
+  '#0ea5e9', // Sky Blue
+  '#f59e0b', // Amber
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#14b8a6', // Teal
+  '#f97316', // Orange
+  '#6366f1'  // Indigo
+];
+
+const getMaturityMeta = (val) => {
+  const num = parseFloat(val || 0);
+  if (num > 19) {
+    return {
+      label: 'Siap Tebang',
+      shortLabel: 'Kemasakan Puncak (> 19°)',
+      color: '#ef4444',
+      badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
+      dotClass: 'bg-rose-500'
+    };
+  }
+  if (num >= 15) {
+    return {
+      label: 'Menjelang Panen',
+      shortLabel: 'Matang Optimal (15°–19°)',
+      color: '#f59e0b',
+      badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+      dotClass: 'bg-amber-500'
+    };
+  }
+  return {
+    label: 'Fase Vegetatif',
+    shortLabel: 'Pertumbuhan Awal (< 15°)',
+    color: '#10b981',
+    badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    dotClass: 'bg-emerald-500'
+  };
+};
+
 const CustomChartTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    const val = payload[0].value;
-    const color = val > 19 ? '#ef4444' : val >= 15 ? '#f59e0b' : '#10b981';
+  if (!active || !payload || !payload.length) return null;
+  const validItems = payload.filter(item => item.value !== null && item.value !== undefined && !isNaN(parseFloat(item.value)));
+  if (validItems.length === 0) return null;
+
+  // Mode multi-garis (Semua Petak)
+  if (validItems.length > 1 || (validItems[0].dataKey !== 'brix' && validItems[0].dataKey !== 'rata_brix')) {
     return (
-      <div className="bg-[#091a13]/95 text-white p-3 rounded-xl shadow-xl border border-emerald-500/30 backdrop-blur-md font-sans text-xs">
-        <p className="text-[10px] font-mono text-emerald-400 font-bold mb-1">{label}</p>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[10px] text-slate-300">Nilai Brix:</span>
-          <span className="font-mono text-base font-extrabold text-white" style={{ color }}>
-            {val}°Bx
-          </span>
+      <div className="bg-[#091a13]/95 text-white p-3 rounded-xl shadow-xl border border-emerald-500/30 backdrop-blur-md font-sans text-xs min-w-[190px]">
+        <p className="text-[10px] font-mono text-emerald-400 font-bold mb-2">{label}</p>
+        <div className="space-y-2">
+          {validItems.map((entry) => {
+            const val = parseFloat(entry.value);
+            const mat = getMaturityMeta(val);
+            const meta = entry.payload?._meta?.[entry.dataKey];
+            return (
+              <div key={entry.dataKey} className="space-y-0.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-200">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.color || mat.color }} />
+                    {entry.name || entry.dataKey}
+                  </span>
+                  <span className="font-mono text-sm font-extrabold" style={{ color: mat.color }}>
+                    {val.toFixed(1)}°Bx
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[10px] pl-4 text-slate-400">
+                  <span style={{ color: mat.color }} className="font-semibold">{mat.label}</span>
+                  {meta?.jenis_tebu && meta.jenis_tebu !== '-' && (
+                    <span className="truncate max-w-[100px]">{meta.jenis_tebu}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
   }
-  return null;
+
+  // Mode tunggal (1 petak / bar chart)
+  const val = parseFloat(validItems[0].value);
+  const pt = validItems[0].payload || {};
+  const mat = getMaturityMeta(val);
+  return (
+    <div className="bg-[#091a13]/95 text-white p-3 rounded-xl shadow-xl border border-emerald-500/30 backdrop-blur-md font-sans text-xs min-w-[175px]">
+      <p className="text-[10px] font-mono text-emerald-400 font-bold mb-1">{label}</p>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[10px] text-slate-300">Nilai Brix:</span>
+        <span className="font-mono text-base font-extrabold" style={{ color: mat.color }}>
+          {val.toFixed(1)}°Bx
+        </span>
+      </div>
+      <div className="mt-1.5 pt-1.5 border-t border-emerald-900/60 space-y-0.5 text-[10px]">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-slate-400">Status:</span>
+          <span className="font-bold" style={{ color: mat.color }}>{mat.label}</span>
+        </div>
+        {pt.nama_blok && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-slate-400">Petak:</span>
+            <span className="font-mono font-semibold text-slate-200">{pt.nama_blok}</span>
+          </div>
+        )}
+        {pt.jenis_tebu && pt.jenis_tebu !== '-' && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-slate-400">Varietas:</span>
+            <span className="font-medium text-slate-200 truncate max-w-[110px]">{pt.jenis_tebu}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default function AnalysisData({ 
   sampelData, 
   blokData, 
   selectedLahan, 
+  setSelectedLahan,
   selectedBlok, 
+  setSelectedBlok,
   lahanData = [],
   setSampelData,
   onDeletePoin,
-  setActiveTab
+  setActiveTab,
+  spatialMethod = 'hybrid_rk',
+  setSpatialMethod,
+  spatialInfo,
+  setSpatialInfo
 }) {
+  const [isLoadingSpatial, setIsLoadingSpatial] = useState(false);
+  const spatialReqRef = useRef(0);
   const [filters, setFilters] = useState({
     nama_lahan: '',
     nama_blok: '',
@@ -145,6 +252,111 @@ export default function AnalysisData({
     }
   }, [customVarieties]);
 
+  // SINKRONISASI FILTER TABEL DENGAN PILIHAN LAHAN & PETAK DI MAPS
+  useEffect(() => {
+    const lahanObj = (lahanData || []).find(
+      l => String(l.properties?.id_lahan || l.id_lahan) === String(selectedLahan)
+    );
+    const blokObj = (blokData || []).find(
+      b => String(b.properties?.id_blok || b.id_blok) === String(selectedBlok)
+    );
+    setFilters(prev => ({
+      ...prev,
+      nama_lahan: selectedLahan === 'all' ? '' : (lahanObj?.properties?.nama_lahan || lahanObj?.nama_lahan || ''),
+      nama_blok: selectedBlok === 'all' ? '' : (blokObj?.properties?.nama_blok || blokObj?.nama_blok || '')
+    }));
+  }, [selectedLahan, selectedBlok, lahanData, blokData]);
+
+  // SINKRONISASI MODEL SPASIAL (HYBRID RF+KRIGING / KED) DENGAN MAPS
+  useEffect(() => {
+    const arrBlok = Array.isArray(blokData) ? blokData : [];
+    const arrSampel = Array.isArray(sampelData) ? sampelData : [];
+    if (arrSampel.length === 0) return;
+
+    let activeBloks = arrBlok;
+    if (selectedBlok !== 'all') {
+      activeBloks = arrBlok.filter(b => String(b?.properties?.id_blok || b?.id_blok) === String(selectedBlok));
+    } else if (selectedLahan !== 'all') {
+      activeBloks = arrBlok.filter(b => String(b?.properties?.id_lahan || b?.id_lahan) === String(selectedLahan));
+    }
+    const activeBlokIds = activeBloks.map(b => String(b?.properties?.id_blok || b?.id_blok));
+
+    const clientSamples = arrSampel
+      .filter(titik => {
+        const idBlokTitik = String(titik?.properties?.id_blok || titik?.id_blok || '');
+        if (selectedBlok !== 'all') return idBlokTitik === String(selectedBlok);
+        if (selectedLahan !== 'all') return activeBlokIds.includes(idBlokTitik);
+        return true;
+      })
+      .map((titik, idx) => ({
+        id: String(titik?.properties?.id_data || titik?.id_data || titik?.id_titik || titik?.properties?.id_titik || idx),
+        lon: parseFloat(titik?.longitude || titik?.lng || titik?.geometry?.coordinates?.[0]),
+        lat: parseFloat(titik?.latitude || titik?.lat || titik?.geometry?.coordinates?.[1]),
+        brix: parseFloat(titik?.nilai_brix || titik?.properties?.nilai_brix)
+      }))
+      .filter(s => !isNaN(s.lon) && !isNaN(s.lat) && !isNaN(s.brix));
+
+    const clientPolygons = activeBloks
+      .map(b => b?.geometry || b?.geojson)
+      .filter(g => g && g.type);
+
+    const reqId = ++spatialReqRef.current;
+    setIsLoadingSpatial(true);
+
+    let savedUser;
+    try { savedUser = JSON.parse(localStorage.getItem('ebrix_user') || '{}'); } catch { savedUser = {}; }
+    const token = localStorage.getItem('token') || savedUser?.token;
+
+    axios.post(
+      `${ML_API_BASE_URL}/ml/spatial/interpolate`,
+      {
+        blokId: String(selectedBlok),
+        lahanId: String(selectedLahan),
+        method: spatialMethod,
+        samples: clientSamples,
+        polygons: clientPolygons
+      },
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+    ).then(res => {
+      if (reqId !== spatialReqRef.current) return;
+      if (setSpatialInfo && res.data?.success) {
+        setSpatialInfo(res.data);
+      }
+    }).catch(() => {
+      // Abaikan jika backend spasial tidak terjangkau
+    }).finally(() => {
+      if (reqId === spatialReqRef.current) setIsLoadingSpatial(false);
+    });
+  }, [selectedLahan, selectedBlok, spatialMethod, sampelData, blokData, setSpatialInfo]);
+
+  // Daftar petak yang tersedia sesuai lahan terpilih (untuk dropdown kurva)
+  const availableBloksForSelectedLahan = useMemo(() => {
+    const arr = Array.isArray(blokData) ? blokData : [];
+    const filtered = selectedLahan === 'all'
+      ? arr
+      : arr.filter(b => String(b.properties?.id_lahan || b.id_lahan) === String(selectedLahan));
+    return [...filtered].sort((a, b) => {
+      const na = a.properties?.nama_blok || a.nama_blok || '';
+      const nb = b.properties?.nama_blok || b.nama_blok || '';
+      return na.localeCompare(nb, undefined, { numeric: true });
+    });
+  }, [blokData, selectedLahan]);
+
+  const activeScopeLabel = useMemo(() => {
+    if (selectedBlok !== 'all') {
+      const b = (blokData || []).find(item => String(item.properties?.id_blok || item.id_blok) === String(selectedBlok));
+      const l = b ? (lahanData || []).find(item => String(item.properties?.id_lahan || item.id_lahan) === String(b.properties?.id_lahan || b.id_lahan)) : null;
+      const bName = b?.properties?.nama_blok || b?.nama_blok || `Petak ${selectedBlok}`;
+      const lName = l?.properties?.nama_lahan || l?.nama_lahan;
+      return lName ? `${lName} · ${bName}` : bName;
+    }
+    if (selectedLahan !== 'all') {
+      const l = (lahanData || []).find(item => String(item.properties?.id_lahan || item.id_lahan) === String(selectedLahan));
+      return l?.properties?.nama_lahan || l?.nama_lahan || `Lahan ${selectedLahan}`;
+    }
+    return 'Semua Lahan & Petak';
+  }, [selectedLahan, selectedBlok, lahanData, blokData]);
+
   // LOGIKA GRAFIK TREN BRIX 
   const chartTrenData = useMemo(() => {
     let dataAktif = sampelData;
@@ -185,6 +397,9 @@ export default function AnalysisData({
       const nilaiBrixAsli = item.properties?.nilai_brix || item.nilai_brix || 0;
       const waktuMentah = item.properties?.waktu_pengukuran || item.properties?.created_at || item.waktu_pengukuran;
       const waktuAsli = typeof waktuMentah === 'string' ? waktuMentah.replace(' GMT', '') : waktuMentah;
+      const idBlokItem = String(item.properties?.id_blok || item.id_blok || '');
+      const blokObj = (blokData || []).find(b => String(b.properties?.id_blok || b.id_blok) === idBlokItem);
+      const jenisTebu = item.properties?.jenis_tebu || item.jenis_tebu || '-';
       
       let labelTanggal = `Data ke-${index + 1}`; 
       let sortDate = new Date(0); 
@@ -206,10 +421,117 @@ export default function AnalysisData({
       return {
         tanggal: labelTanggal,
         brix: parseFloat(nilaiBrixAsli),
+        id_blok: idBlokItem,
+        id_lahan: blokObj ? String(blokObj.properties?.id_lahan || blokObj.id_lahan || '') : '',
+        nama_blok: blokObj?.properties?.nama_blok || blokObj?.nama_blok || `Petak ${idBlokItem || '?'}`,
+        jenis_tebu: jenisTebu,
         _sortDate: sortDate 
       };
     }).sort((a, b) => a._sortDate - b._sortDate);
   }, [sampelData, selectedLahan, selectedBlok, blokData, trendDateRange]);
+
+  // DATA MULTI-GARIS PER PETAK SAAT "SEMUA PETAK" DIPILIH
+  const multiPetakChart = useMemo(() => {
+    if (selectedBlok !== 'all' || chartTrenData.length === 0) {
+      return { isMulti: false, series: [], data: [] };
+    }
+
+    const seriesMap = new Map();
+    chartTrenData.forEach(item => {
+      const key = item.nama_blok;
+      if (!seriesMap.has(key)) {
+        seriesMap.set(key, {
+          key,
+          id_blok: item.id_blok,
+          id_lahan: item.id_lahan,
+          lastBrix: item.brix,
+          firstBrix: item.brix,
+          count: 1
+        });
+      } else {
+        const s = seriesMap.get(key);
+        s.lastBrix = item.brix;
+        s.count += 1;
+      }
+    });
+
+    const series = [...seriesMap.values()]
+      .sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }))
+      .map((s, idx) => ({
+        ...s,
+        color: PETAK_LINE_COLORS[idx % PETAK_LINE_COLORS.length]
+      }));
+
+    if (series.length <= 1) {
+      return { isMulti: false, series, data: [] };
+    }
+
+    // Gabungkan observasi pada timestamp yang sama ke 1 baris; timestamp berbeda dihubungkan via connectNulls
+    const rowMap = new Map();
+    chartTrenData.forEach(item => {
+      const timeKey = `${item._sortDate.getTime()}_${item.tanggal}`;
+      if (!rowMap.has(timeKey)) {
+        rowMap.set(timeKey, {
+          tanggal: item.tanggal,
+          _sortDate: item._sortDate,
+          _sums: {},
+          _counts: {},
+          _meta: {}
+        });
+      }
+      const row = rowMap.get(timeKey);
+      row._sums[item.nama_blok] = (row._sums[item.nama_blok] || 0) + item.brix;
+      row._counts[item.nama_blok] = (row._counts[item.nama_blok] || 0) + 1;
+      row._meta[item.nama_blok] = { jenis_tebu: item.jenis_tebu };
+    });
+
+    const data = [...rowMap.values()]
+      .sort((a, b) => a._sortDate - b._sortDate)
+      .map(row => {
+        const cleanRow = { tanggal: row.tanggal, _meta: row._meta };
+        Object.keys(row._sums).forEach(k => {
+          cleanRow[k] = parseFloat((row._sums[k] / row._counts[k]).toFixed(2));
+        });
+        return cleanRow;
+      });
+
+    return { isMulti: true, series, data };
+  }, [chartTrenData, selectedBlok]);
+
+  // RINGKASAN PERKEMBANGAN KENAIKAN BRIX & STATUS KEMATANGAN TEBU
+  const brixProgressStats = useMemo(() => {
+    if (!chartTrenData || chartTrenData.length === 0) return null;
+    const first = chartTrenData[0];
+    const last = chartTrenData[chartTrenData.length - 1];
+    const values = chartTrenData.map(d => d.brix);
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const maxVal = Math.max(...values);
+    const minVal = Math.min(...values);
+    const delta = last.brix - first.brix;
+
+    let ratePerDay = null;
+    const diffMs = last._sortDate.getTime() - first._sortDate.getTime();
+    if (diffMs > 12 * 3600 * 1000) {
+      const diffDays = diffMs / (24 * 3600 * 1000);
+      ratePerDay = delta / diffDays;
+    }
+
+    const maturity = getMaturityMeta(last.brix);
+    const gapToHarvest = Math.max(0, 19.0 - last.brix);
+
+    return {
+      count: chartTrenData.length,
+      firstBrix: first.brix,
+      lastBrix: last.brix,
+      avgBrix: avg,
+      maxBrix: maxVal,
+      minBrix: minVal,
+      delta,
+      ratePerDay,
+      maturity,
+      gapToHarvest
+    };
+  }, [chartTrenData]);
 
   // LOGIKA GRAFIK BLOK
   const chartBlokData = useMemo(() => {
@@ -224,12 +546,17 @@ export default function AnalysisData({
     }
 
     return blokAktif.map(blok => {
-      const titik = sampelData.filter(t => String(t.id_blok || t.properties?.id_blok) === String(blok.properties?.id_blok || blok.id_blok));
+      const idBlok = String(blok.properties?.id_blok || blok.id_blok);
+      const idLahan = String(blok.properties?.id_lahan || blok.id_lahan || '');
+      const titik = sampelData.filter(t => String(t.id_blok || t.properties?.id_blok) === idBlok);
       const avg = titik.length > 0 ? titik.reduce((sum, t) => sum + parseFloat(t.nilai_brix || t.properties?.nilai_brix || 0), 0) / titik.length : 0;
       
       return { 
+        id_blok: idBlok,
+        id_lahan: idLahan,
         nama_blok: blok.properties?.nama_blok || blok.nama_blok, 
-        rata_brix: parseFloat(avg.toFixed(1)) 
+        rata_brix: parseFloat(avg.toFixed(1)),
+        jumlah_titik: titik.length
       };
     });
   }, [blokData, sampelData, selectedLahan, selectedBlok]);
@@ -259,6 +586,7 @@ export default function AnalysisData({
       return {
         id_titik: idTitikAsli,
         id_blok: idBlokSampel,
+        id_lahan: idLahanTarget ? String(idLahanTarget) : 'all',
         no_asli: index + 1, 
         nama_lahan: lahan ? (lahan.properties?.nama_lahan || lahan.nama_lahan) : '-',
         nama_blok: blok ? (blok.properties?.nama_blok || blok.nama_blok) : '-',
@@ -332,7 +660,37 @@ export default function AnalysisData({
   }, [tableData, customVarieties]);
 
   const handleFilterChange = (e, column) => {
-    setFilters(prev => ({ ...prev, [column]: e.target.value }));
+    const val = e.target.value;
+    setFilters(prev => ({ ...prev, [column]: val }));
+
+    // Sinkronkan filter tabel Lahan & Petak balik ke state global Maps
+    if (column === 'nama_lahan' && setSelectedLahan) {
+      if (!val) {
+        setSelectedLahan('all');
+        if (setSelectedBlok) setSelectedBlok('all');
+      } else {
+        const match = (lahanData || []).find(l => (l.properties?.nama_lahan || l.nama_lahan) === val);
+        if (match) {
+          setSelectedLahan(String(match.properties?.id_lahan || match.id_lahan));
+          if (setSelectedBlok) setSelectedBlok('all');
+        }
+      }
+    } else if (column === 'nama_blok' && setSelectedBlok) {
+      if (!val) {
+        setSelectedBlok('all');
+      } else {
+        const match = (blokData || []).find(b => (b.properties?.nama_blok || b.nama_blok) === val);
+        if (match) {
+          setSelectedBlok(String(match.properties?.id_blok || match.id_blok));
+        }
+      }
+    }
+  };
+
+  const handleOpenOnMap = (idLahanTarget, idBlokTarget) => {
+    if (idLahanTarget && setSelectedLahan) setSelectedLahan(String(idLahanTarget));
+    if (idBlokTarget && setSelectedBlok) setSelectedBlok(String(idBlokTarget));
+    if (setActiveTab) setActiveTab('peta');
   };
 
   // HANDLER SIMPAN JENIS TEBU (INTEGRASI POST KE BACKEND)
@@ -581,15 +939,166 @@ export default function AnalysisData({
         </div>
       )}
 
+      {/* ======================= KONEKSI MAPS & MODEL SPASIAL ======================= */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-emerald-200/80 flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">
+                  Sinkronisasi Peta & Model Spasial
+                </h3>
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  TERHUBUNG KE MAPS
+                </span>
+                <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-lg truncate max-w-[260px]">
+                  {activeScopeLabel}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Filter lahan, petak, dan algoritma spasial tersinkronisasi dua arah dengan Dashboard Peta
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Switcher 2 Algoritma Utama */}
+            {setSpatialMethod && (
+              <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setSpatialMethod('hybrid_rk')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                    spatialMethod === 'hybrid_rk'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Hybrid RF+Kriging
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpatialMethod('ked')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                    spatialMethod === 'ked'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  KED (Drift)
+                </button>
+              </div>
+            )}
+
+            {setActiveTab && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('peta')}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Lihat di Peta</span>
+                <span>→</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Metrik Spasial Live (sama persis dengan panel Maps) */}
+        {spatialInfo?.summary && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-slate-100">
+            <div className="bg-slate-50/90 border border-slate-200/70 rounded-xl px-3 py-2.5">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Estimasi Spasial</div>
+              <div className="font-mono text-base font-extrabold text-slate-900 mt-0.5">
+                {spatialInfo.summary.brix_rata}°<span className="text-[11px] text-slate-400 ml-0.5">Bx</span>
+              </div>
+              <div className="text-[10px] font-mono text-slate-500">
+                Rentang {spatialInfo.summary.brix_min}° – {spatialInfo.summary.brix_max}°
+              </div>
+            </div>
+
+            <div className="bg-slate-50/90 border border-slate-200/70 rounded-xl px-3 py-2.5">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Sebaran Zona Peta</div>
+              <div className="w-full h-2 rounded-full overflow-hidden flex bg-slate-200 mb-1.5">
+                {spatialInfo.summary.persen_zona.tinggi > 0 && (
+                  <div style={{ width: `${spatialInfo.summary.persen_zona.tinggi}%` }} className="bg-red-500 h-full" />
+                )}
+                {spatialInfo.summary.persen_zona.sedang > 0 && (
+                  <div style={{ width: `${spatialInfo.summary.persen_zona.sedang}%` }} className="bg-amber-400 h-full" />
+                )}
+                {spatialInfo.summary.persen_zona.rendah > 0 && (
+                  <div style={{ width: `${spatialInfo.summary.persen_zona.rendah}%` }} className="bg-emerald-500 h-full" />
+                )}
+              </div>
+              <div className="flex items-center justify-between text-[10px] font-mono font-semibold text-slate-700">
+                <span className="text-red-600">{spatialInfo.summary.persen_zona.tinggi}% T</span>
+                <span className="text-amber-600">{spatialInfo.summary.persen_zona.sedang}% S</span>
+                <span className="text-emerald-600">{spatialInfo.summary.persen_zona.rendah}% R</span>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50/60 border border-emerald-200/70 rounded-xl px-3 py-2.5">
+              <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
+                Validasi ({spatialInfo.validation?.cv_mode || 'CV'})
+              </div>
+              {spatialInfo.validation ? (
+                <>
+                  <div className="font-mono text-base font-extrabold text-emerald-800 mt-0.5">
+                    {spatialInfo.validation.akurasi_persen}%
+                    <span className="text-[11px] font-semibold text-slate-500 ml-1.5">
+                      MAE ±{Number(spatialInfo.validation.mae).toFixed(2)}°
+                    </span>
+                  </div>
+                  {spatialInfo.comparison?.hybrid_rk && spatialInfo.comparison?.ked && (
+                    <div className="text-[10px] font-mono text-slate-600">
+                      RF+Krig {spatialInfo.comparison.hybrid_rk.akurasi_persen}% · KED {spatialInfo.comparison.ked.akurasi_persen}%
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-[11px] text-amber-700 mt-1">Butuh ≥ 4 titik</div>
+              )}
+            </div>
+
+            <div className={`rounded-xl px-3 py-2.5 border ${
+              spatialInfo.summary.jumlah_anomali > 0
+                ? 'bg-violet-50/80 border-violet-200/80'
+                : 'bg-slate-50/90 border-slate-200/70'
+            }`}>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Anomali Spasial</div>
+              <div className={`font-mono text-base font-extrabold mt-0.5 ${
+                spatialInfo.summary.jumlah_anomali > 0 ? 'text-violet-700' : 'text-emerald-700'
+              }`}>
+                {spatialInfo.summary.jumlah_anomali > 0
+                  ? `${spatialInfo.summary.jumlah_anomali} Titik Terdeteksi`
+                  : 'Normal (0)'}
+              </div>
+              <div className="text-[10px] text-slate-500">
+                {isLoadingSpatial
+                  ? 'Memperbarui interpolasi...'
+                  : spatialInfo.summary.jumlah_anomali > 0
+                    ? 'Cek lingkar ungu di Peta'
+                    : 'Tidak ada anomali signifikan'}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* ======================= CHART ROW ======================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[380px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[430px]">
         
-        {/* CHART 1: TREN WAKTU DENGAN AREA GRADIENT */}
+        {/* CHART 1: TREN WAKTU DENGAN PEMILIH LAHAN & STATUS KEMATANGAN */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col relative overflow-hidden">
           
-          <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+          <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 shrink-0">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
@@ -599,7 +1108,7 @@ export default function AnalysisData({
                   Kurva Dinamika Kenaikan Brix
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Pergerakan akumulasi sukrosa sepanjang periode sampling
+                  Pilih lahan atau petak untuk memantau perkembangan gula &amp; kematangan tebu
                 </p>
               </div>
             </div>
@@ -623,8 +1132,9 @@ export default function AnalysisData({
               />
               {(trendDateRange.start || trendDateRange.end) && (
                 <button 
+                  type="button"
                   onClick={() => setTrendDateRange({start: '', end: ''})} 
-                  className="h-8 px-2 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition"
+                  className="h-8 px-2 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition cursor-pointer"
                 >
                   Reset
                 </button>
@@ -632,61 +1142,257 @@ export default function AnalysisData({
             </div>
           </div>
 
-          <div className="flex-1 min-h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartTrenData} margin={{ top: 10, right: 15, bottom: 5, left: -10 }}>
-                <defs>
-                  <linearGradient id="brixAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="tanggal" 
-                  tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
-                  tickLine={false} 
-                  axisLine={{ stroke: '#e2e8f0' }} 
-                />
-                <YAxis 
-                  tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  unit="°"
-                />
-                <Tooltip content={<CustomChartTooltip />} />
-                <Area 
-                  type="monotone" 
-                  dataKey="brix" 
-                  stroke="#10b981" 
-                  strokeWidth={2.5} 
-                  fillOpacity={1} 
-                  fill="url(#brixAreaGradient)" 
-                  dot={{ fill: '#059669', strokeWidth: 2, r: 3 }} 
-                  activeDot={{ r: 6, fill: '#10b981', stroke: '#ffffff', strokeWidth: 2 }} 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          {/* Selector Lahan & Petak (Sinkron dengan Peta) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3.5">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">
+                Pilih Lahan
+              </label>
+              <select
+                value={selectedLahan}
+                onChange={(e) => {
+                  if (setSelectedLahan) setSelectedLahan(e.target.value);
+                  if (setSelectedBlok) setSelectedBlok('all');
+                }}
+                className="w-full h-9 px-2.5 text-xs font-semibold text-slate-700 border border-slate-200 rounded-xl bg-slate-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/25 cursor-pointer"
+              >
+                <option value="all">Semua Lahan ({(lahanData || []).length})</option>
+                {(lahanData || []).map(l => {
+                  const idL = String(l.properties?.id_lahan || l.id_lahan);
+                  const namaL = l.properties?.nama_lahan || l.nama_lahan;
+                  return <option key={idL} value={idL}>{namaL}</option>;
+                })}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">
+                Pilih Petak / Blok
+              </label>
+              <select
+                value={selectedBlok}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (setSelectedBlok) setSelectedBlok(val);
+                  if (val !== 'all' && setSelectedLahan && selectedLahan === 'all') {
+                    const matched = availableBloksForSelectedLahan.find(
+                      b => String(b.properties?.id_blok || b.id_blok) === val
+                    );
+                    const idL = matched?.properties?.id_lahan || matched?.id_lahan;
+                    if (idL) setSelectedLahan(String(idL));
+                  }
+                }}
+                className="w-full h-9 px-2.5 text-xs font-semibold text-slate-700 border border-slate-200 rounded-xl bg-slate-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/25 cursor-pointer"
+              >
+                <option value="all">Semua Petak ({availableBloksForSelectedLahan.length})</option>
+                {availableBloksForSelectedLahan.map(b => {
+                  const idB = String(b.properties?.id_blok || b.id_blok);
+                  const namaB = b.properties?.nama_blok || b.nama_blok;
+                  return <option key={idB} value={idB}>{namaB}</option>;
+                })}
+              </select>
+            </div>
+          </div>
+
+          {/* Strip Perkembangan Kenaikan Brix & Status Kematangan Tebu */}
+          {brixProgressStats && (
+            <div className="mb-4 p-3 rounded-xl bg-slate-50/90 border border-slate-200/80 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+              <div className="flex items-center gap-2.5">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold ${brixProgressStats.maturity.badgeClass}`}>
+                  <span className={`w-2 h-2 rounded-full ${brixProgressStats.maturity.dotClass}`} />
+                  {brixProgressStats.maturity.label}
+                </span>
+                <div className="text-[11px] text-slate-600">
+                  {brixProgressStats.gapToHarvest > 0 ? (
+                    <span>
+                      Kurang <b className="font-mono text-slate-800">{brixProgressStats.gapToHarvest.toFixed(1)}°Bx</b> ke siap tebang (19°)
+                    </span>
+                  ) : (
+                    <span className="text-rose-700 font-semibold">Memenuhi ambang giling (≥ 19°Bx)</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 font-mono text-[11px]">
+                <div className="text-slate-600">
+                  <span className="text-slate-400">Tren: </span>
+                  <b>{brixProgressStats.firstBrix.toFixed(1)}°</b> → <b className="text-slate-900">{brixProgressStats.lastBrix.toFixed(1)}°</b>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md font-bold border ${
+                  brixProgressStats.delta >= 0
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-rose-50 text-rose-700 border-rose-200'
+                }`}>
+                  {brixProgressStats.delta >= 0 ? '+' : ''}{brixProgressStats.delta.toFixed(1)}°Bx
+                  {brixProgressStats.ratePerDay !== null && (
+                    <span className="font-normal ml-1">
+                      ({brixProgressStats.ratePerDay >= 0 ? '+' : ''}{brixProgressStats.ratePerDay.toFixed(2)}°/hr)
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Legenda Interaktif Per Petak saat mode Semua Petak aktif */}
+          {multiPetakChart.isMulti && (
+            <div className="flex flex-wrap items-center gap-1.5 mb-3">
+              {multiPetakChart.series.map(s => (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => {
+                    if (s.id_lahan && setSelectedLahan && selectedLahan === 'all') {
+                      setSelectedLahan(String(s.id_lahan));
+                    }
+                    if (s.id_blok && setSelectedBlok) setSelectedBlok(String(s.id_blok));
+                  }}
+                  title={`Klik untuk fokus ke ${s.key} (Brix terbaru ${s.lastBrix.toFixed(1)}°Bx)`}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
+                >
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                  <span>{s.key}</span>
+                  <span className="font-mono text-slate-500">{s.lastBrix.toFixed(1)}°</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex-1 min-h-[250px]">
+            {chartTrenData.length > 0 ? (
+              multiPetakChart.isMulti ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={multiPetakChart.data} margin={{ top: 12, right: 18, bottom: 5, left: -10 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis 
+                      dataKey="tanggal" 
+                      tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
+                      tickLine={false} 
+                      axisLine={{ stroke: '#e2e8f0' }} 
+                    />
+                    <YAxis 
+                      domain={[0, 24]}
+                      tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
+                      tickLine={false} 
+                      axisLine={false} 
+                      unit="°"
+                    />
+                    <ReferenceLine
+                      y={15}
+                      stroke="#f59e0b"
+                      strokeDasharray="4 4"
+                      label={{ value: 'Matang 15°', position: 'insideTopRight', fill: '#d97706', fontSize: 10, fontWeight: 700 }}
+                    />
+                    <ReferenceLine
+                      y={19}
+                      stroke="#ef4444"
+                      strokeDasharray="4 4"
+                      label={{ value: 'Siap Tebang 19°', position: 'insideTopRight', fill: '#dc2626', fontSize: 10, fontWeight: 700 }}
+                    />
+                    <Tooltip content={<CustomChartTooltip />} />
+                    {multiPetakChart.series.map(s => (
+                      <Line
+                        key={s.key}
+                        type="monotone"
+                        dataKey={s.key}
+                        name={s.key}
+                        stroke={s.color}
+                        strokeWidth={2.5}
+                        connectNulls={true}
+                        dot={{ fill: s.color, stroke: '#ffffff', strokeWidth: 1.5, r: 3.5 }}
+                        activeDot={{ r: 6, fill: s.color, stroke: '#ffffff', strokeWidth: 2 }}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartTrenData} margin={{ top: 12, right: 18, bottom: 5, left: -10 }}>
+                    <defs>
+                      <linearGradient id="brixAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis 
+                      dataKey="tanggal" 
+                      tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
+                      tickLine={false} 
+                      axisLine={{ stroke: '#e2e8f0' }} 
+                    />
+                    <YAxis 
+                      domain={[0, 24]}
+                      tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
+                      tickLine={false} 
+                      axisLine={false} 
+                      unit="°"
+                    />
+                    <ReferenceLine
+                      y={15}
+                      stroke="#f59e0b"
+                      strokeDasharray="4 4"
+                      label={{ value: 'Matang 15°', position: 'insideTopRight', fill: '#d97706', fontSize: 10, fontWeight: 700 }}
+                    />
+                    <ReferenceLine
+                      y={19}
+                      stroke="#ef4444"
+                      strokeDasharray="4 4"
+                      label={{ value: 'Siap Tebang 19°', position: 'insideTopRight', fill: '#dc2626', fontSize: 10, fontWeight: 700 }}
+                    />
+                    <Tooltip content={<CustomChartTooltip />} />
+                    <Area 
+                      type="monotone" 
+                      dataKey="brix" 
+                      stroke="#10b981" 
+                      strokeWidth={2.5} 
+                      fillOpacity={1} 
+                      fill="url(#brixAreaGradient)" 
+                      dot={{ fill: '#059669', strokeWidth: 2, r: 3 }} 
+                      activeDot={{ r: 6, fill: '#10b981', stroke: '#ffffff', strokeWidth: 2 }} 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )
+            ) : (
+              <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                Belum ada data observasi Brix pada lahan/periode yang dipilih.
+              </div>
+            )}
           </div>
         </div>
 
         {/* CHART 2: STATUS RATA-RATA PETAK */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col relative overflow-hidden">
           
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
+          <div className="flex flex-wrap items-start justify-between gap-2 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">
+                  Distribusi Kematangan Tiap Petak
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Klik batang petak untuk memfilter kurva &amp; sinkronisasi peta
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">
-                Distribusi Kematangan Tiap Petak
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                Tolak ukur rata-rata Brix petak untuk penentuan jadwal tebang
-              </p>
-            </div>
+
+            {(selectedLahan !== 'all' || selectedBlok !== 'all') && setSelectedLahan && setSelectedBlok && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedLahan('all');
+                  setSelectedBlok('all');
+                }}
+                className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+              >
+                Tampilkan Semua
+              </button>
+            )}
           </div>
 
           <div className="flex-1 min-h-[260px]">
@@ -700,13 +1406,28 @@ export default function AnalysisData({
                   axisLine={{ stroke: '#e2e8f0' }} 
                 />
                 <YAxis 
+                  domain={[0, 24]}
                   tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'JetBrains Mono' }} 
                   tickLine={false} 
                   axisLine={false} 
                   unit="°"
                 />
+                <ReferenceLine y={19} stroke="#ef4444" strokeDasharray="4 4" />
                 <Tooltip content={<CustomChartTooltip />} />
-                <Bar dataKey="rata_brix" radius={[6, 6, 0, 0]}>
+                <Bar
+                  dataKey="rata_brix"
+                  radius={[6, 6, 0, 0]}
+                  className="cursor-pointer"
+                  onClick={(entry) => {
+                    if (!entry?.id_blok || !setSelectedBlok) return;
+                    if (String(selectedBlok) === String(entry.id_blok)) {
+                      setSelectedBlok('all');
+                    } else {
+                      if (entry.id_lahan && setSelectedLahan) setSelectedLahan(String(entry.id_lahan));
+                      setSelectedBlok(String(entry.id_blok));
+                    }
+                  }}
+                >
                   {chartBlokData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getBrixColor(entry.rata_brix)} />
                   ))}
@@ -869,9 +1590,9 @@ export default function AnalysisData({
                 </th>
 
                 {/* Aksi */}
-                <th className="px-4 py-3 font-bold text-center w-20">
+                <th className="px-4 py-3 font-bold text-center w-28">
                   <div className="mb-1.5 text-slate-500">Aksi</div>
-                  <div className="h-8 flex items-center justify-center text-[10px] text-slate-400 font-mono">Hapus</div>
+                  <div className="h-8 flex items-center justify-center text-[10px] text-slate-400 font-mono">Peta / Hapus</div>
                 </th>
               </tr>
             </thead>
@@ -931,16 +1652,31 @@ export default function AnalysisData({
                       {row.tanggal}
                     </td>
                     <td className="px-4 py-3.5 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteRow(row)}
-                        title={`Hapus data observasi ${row.id_titik}`}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/80 hover:border-rose-200 transition-all duration-150 cursor-pointer shadow-2xs group"
-                      >
-                        <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                      <div className="inline-flex items-center justify-center gap-1.5">
+                        {setActiveTab && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenOnMap(row.id_lahan, row.id_blok)}
+                            title={`Lihat ${row.nama_blok} (${row.nama_lahan}) di Peta`}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-50/70 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200/80 hover:border-emerald-600 transition-all duration-150 cursor-pointer shadow-2xs"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                            </svg>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRow(row)}
+                          title={`Hapus data observasi ${row.id_titik}`}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/80 hover:border-rose-200 transition-all duration-150 cursor-pointer shadow-2xs group"
+                        >
+                          <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

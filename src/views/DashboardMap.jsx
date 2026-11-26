@@ -4,7 +4,7 @@ import MapPopup from '../components/MapPopup';
 import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { API_BASE_URL, MAPBOX_TOKEN, SATELLITE_MAP_STYLE } from '../config';
+import { ML_API_BASE_URL, MAPBOX_TOKEN, SATELLITE_MAP_STYLE } from '../config';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
@@ -12,7 +12,11 @@ const DashboardMap = ({
     selectedLahan, setSelectedLahan, 
     selectedBlok, setSelectedBlok,
     brixFilter, setBrixFilter,
-    sampelData, blokData, lahanData, onDeletePoin 
+    sampelData, blokData, lahanData, onDeletePoin,
+    spatialMethod: externalSpatialMethod,
+    setSpatialMethod: setExternalSpatialMethod,
+    spatialInfo: externalSpatialInfo,
+    setSpatialInfo: setExternalSpatialInfo
 }) => {
     const mapContainer = useRef(null);
     const map = useRef(null);
@@ -24,6 +28,15 @@ const DashboardMap = ({
     const [isMapReady, setIsMapReady] = useState(false);
     const [showMarkers, setShowMarkers] = useState(true);
     const [showHeatmap, setShowHeatmap] = useState(true);
+    const [localSpatialMethod, setLocalSpatialMethod] = useState('hybrid_rk');
+    const [localSpatialInfo, setLocalSpatialInfo] = useState(null);
+    const spatialMethod = externalSpatialMethod ?? localSpatialMethod;
+    const setSpatialMethod = setExternalSpatialMethod ?? setLocalSpatialMethod;
+    const spatialInfo = externalSpatialInfo !== undefined ? externalSpatialInfo : localSpatialInfo;
+    const setSpatialInfo = setExternalSpatialInfo ?? setLocalSpatialInfo;
+    const [isSpatialPanelOpen, setIsSpatialPanelOpen] = useState(true);
+    const krigingHasGridRef = useRef(false);
+    const spatialRequestRef = useRef(0);
 
     // Auto-resize Mapbox when container size changes
     useEffect(() => {
@@ -160,6 +173,31 @@ const DashboardMap = ({
                 }
             });
 
+            // 2b. Grid Interpolasi Kriging / IDW dari Model Spasial (backend /ml/spatial/interpolate)
+            map.current.addSource('kriging-grid-source', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
+
+            map.current.addLayer({
+                id: 'kriging-grid-layer',
+                type: 'fill',
+                source: 'kriging-grid-source',
+                paint: {
+                    'fill-color': [
+                        'interpolate', ['linear'], ['get', 'brix'],
+                        12, '#16a34a',
+                        14.5, '#84cc16',
+                        16, '#eab308',
+                        18, '#f97316',
+                        19.5, '#ef4444',
+                        22, '#b91c1c'
+                    ],
+                    'fill-opacity': 0.6,
+                    'fill-antialias': false
+                }
+            });
+
             // 3. Garis Batas Petak Blok (Garis Biru Putus-Putus Sesuai Tampilan Sebelumnya)
             map.current.addLayer({
                 id: 'blok-line-layer',
@@ -186,6 +224,78 @@ const DashboardMap = ({
                     'line-color': '#ff7700', 
                     'line-width': 3.8
                 }
+            });
+
+            // 5. Titik Anomali Spasial (Early Warning) hasil validasi Leave-One-Out model
+            map.current.addSource('kriging-anomaly-source', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
+
+            map.current.addLayer({
+                id: 'kriging-anomaly-layer',
+                type: 'circle',
+                source: 'kriging-anomaly-source',
+                paint: {
+                    'circle-radius': 11,
+                    'circle-color': 'rgba(0,0,0,0)',
+                    'circle-stroke-color': '#7c3aed',
+                    'circle-stroke-width': 3
+                }
+            });
+
+            map.current.on('mouseenter', 'kriging-anomaly-layer', () => {
+                map.current.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.current.on('mouseleave', 'kriging-anomaly-layer', () => {
+                map.current.getCanvas().style.cursor = '';
+            });
+
+            map.current.on('click', 'kriging-anomaly-layer', (e) => {
+                const p = e.features?.[0]?.properties;
+                if (!p) return;
+                const aktual = parseFloat(p.brix_aktual);
+                const estimasi = parseFloat(p.brix_estimasi);
+                const diff = !isNaN(aktual) && !isNaN(estimasi) ? (aktual - estimasi) : null;
+                const diffStr = diff !== null ? `${diff >= 0 ? '+' : ''}${diff.toFixed(2)}°` : '-';
+                const zVal = parseFloat(p.z_score);
+                const isLow = !isNaN(zVal) && zVal < 0;
+
+                new mapboxgl.Popup({ offset: 14, maxWidth: '300px', focusAfterOpen: false })
+                    .setLngLat(e.lngLat)
+                    .setHTML(`
+                        <div style="padding:16px;font-family:var(--font-sans,sans-serif);color:#1e293b;min-width:255px;max-width:290px;">
+                            <div style="display:flex;align-items:center;gap:8px;padding-right:26px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
+                                <div style="width:28px;height:28px;border-radius:8px;background:#f3e8ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:14px;">!</div>
+                                <div>
+                                    <div style="font-size:9px;font-family:var(--font-mono,monospace);font-weight:700;letter-spacing:0.08em;color:#7c3aed;text-transform:uppercase;">Early Warning</div>
+                                    <div style="font-size:13px;font-weight:800;color:#0f172a;line-height:1.2;">Anomali Spasial</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:10px;padding:8px 10px;border-radius:10px;background:${isLow ? '#faf5ff' : '#fffbeb'};border:1px solid ${isLow ? '#e9d5ff' : '#fde68a'};font-size:11px;line-height:1.45;color:${isLow ? '#581c87' : '#92400e'};font-weight:500;">
+                                ${p.jenis}
+                            </div>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+                                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;">
+                                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;">Brix Aktual</div>
+                                    <div style="font-family:var(--font-mono,monospace);font-size:16px;font-weight:800;color:#7c3aed;margin-top:2px;">${p.brix_aktual}°<span style="font-size:10px;font-weight:600;color:#64748b;">Bx</span></div>
+                                </div>
+                                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;">
+                                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;">Est. Sekitar</div>
+                                    <div style="font-family:var(--font-mono,monospace);font-size:16px;font-weight:800;color:#0f172a;margin-top:2px;">${p.brix_estimasi}°<span style="font-size:10px;font-weight:600;color:#64748b;">Bx</span></div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:11px;">
+                                <span style="color:#64748b;font-weight:500;">Deviasi: <b style="color:#0f172a;font-family:var(--font-mono,monospace);">${diffStr}</b></span>
+                                <span style="font-family:var(--font-mono,monospace);font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;background:#f3e8ff;color:#6d28d9;border:1px solid #ddd6fe;">Z = ${p.z_score} σ</span>
+                            </div>
+                        </div>
+                    `)
+                    .addTo(map.current);
             });
 
             // Posisikan layer nama tempat/daerah paling atas agar tidak tertutup heatmap & poligon
@@ -234,60 +344,87 @@ const DashboardMap = ({
     }, []);
 
     // ==========================================
-    // FUNGSI REQUEST HEATMAP GEE
+    // MODEL SPASIAL: INTERPOLASI KRIGING / IDW (backend /ml/spatial/interpolate)
     // ==========================================
-    const fetchGEEHeatmap = async () => {
+    const setKrigingData = (grid, anomalies) => {
+        const empty = { type: 'FeatureCollection', features: [] };
+        map.current?.getSource('kriging-grid-source')?.setData(grid || empty);
+        map.current?.getSource('kriging-anomaly-source')?.setData(anomalies || empty);
+        krigingHasGridRef.current = !!(grid && grid.features && grid.features.length > 0);
+    };
+
+    const fetchSpatialInterpolation = async () => {
         if (!map.current || !isMapReady) return;
 
+        const arrBlok = Array.isArray(blokData) ? blokData : [];
+        const arrSampel = Array.isArray(sampelData) ? sampelData : [];
+        const blokCocok = arrBlok.find(b => 
+            String(b?.properties?.id_blok || b?.id_blok) === String(selectedBlok) ||
+            String(b?.properties?.nama_blok || b?.nama_blok) === String(selectedBlok)
+        );
+        const idBlokTarget = blokCocok ? String(blokCocok?.properties?.id_blok || blokCocok?.id_blok) : String(selectedBlok);
+
+        // Siapkan poligon blok & titik sampel aktif (digunakan backend sebagai fallback saat DB offline)
+        let activeBloks = arrBlok;
+        if (selectedBlok !== 'all') {
+            activeBloks = arrBlok.filter(b => String(b?.properties?.id_blok || b?.id_blok) === idBlokTarget);
+        } else if (selectedLahan !== 'all') {
+            activeBloks = arrBlok.filter(b => String(b?.properties?.id_lahan || b?.id_lahan) === String(selectedLahan));
+        }
+        const activeBlokIds = activeBloks.map(b => String(b?.properties?.id_blok || b?.id_blok));
+
+        const clientSamples = arrSampel
+            .filter(titik => {
+                const idBlokTitik = String(titik?.properties?.id_blok || titik?.id_blok || '');
+                if (selectedBlok !== 'all') return idBlokTitik === idBlokTarget;
+                if (selectedLahan !== 'all') return activeBlokIds.includes(idBlokTitik);
+                return true;
+            })
+            .map((titik, idx) => ({
+                id: String(titik?.properties?.id_data || titik?.id_data || titik?.id_titik || titik?.properties?.id_titik || idx),
+                lon: parseFloat(titik?.longitude || titik?.lng || titik?.geometry?.coordinates?.[0]),
+                lat: parseFloat(titik?.latitude || titik?.lat || titik?.geometry?.coordinates?.[1]),
+                brix: parseFloat(titik?.nilai_brix || titik?.properties?.nilai_brix)
+            }))
+            .filter(s => !isNaN(s.lon) && !isNaN(s.lat) && !isNaN(s.brix));
+
+        const clientPolygons = activeBloks
+            .map(b => b?.geometry || b?.geojson)
+            .filter(g => g && g.type);
+
+        const requestId = ++spatialRequestRef.current;
+        setIsLoadingEBK(true);
         try {
-            const arrBlok = Array.isArray(blokData) ? blokData : [];
-            const blokCocok = arrBlok.find(b => 
-                String(b?.properties?.id_blok || b?.id_blok) === String(selectedBlok) ||
-                String(b?.properties?.nama_blok || b?.nama_blok) === String(selectedBlok)
-            );
-            const idBlokTargetGGE = blokCocok ? String(blokCocok?.properties?.id_blok || blokCocok?.id_blok) : String(selectedBlok);
-
-            if (selectedBlok !== 'all') {
-                const arrSampel = Array.isArray(sampelData) ? sampelData : [];
-                const titikDiBlokTarget = arrSampel.filter(t => String(t?.properties?.id_blok || t?.id_blok) === idBlokTargetGGE);
-
-                if (titikDiBlokTarget.length === 0) {
-                    if (map.current.getLayer?.('gee-kriging-layer')) map.current.removeLayer('gee-kriging-layer');
-                    if (map.current.getSource?.('gee-kriging-source')) map.current.removeSource('gee-kriging-source');
-                    setIsLoadingEBK(false);
-                    return; 
+            let savedUser = {};
+            try { savedUser = JSON.parse(localStorage.getItem('ebrix_user') || '{}'); } catch { savedUser = {}; }
+            const token = localStorage.getItem('token') || savedUser?.token;
+            const response = await axios.post(
+                `${ML_API_BASE_URL}/ml/spatial/interpolate`,
+                {
+                    blokId: idBlokTarget,
+                    lahanId: String(selectedLahan),
+                    method: spatialMethod,
+                    samples: clientSamples,
+                    polygons: clientPolygons
+                },
+                {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
                 }
-            }
-
-            setIsLoadingEBK(true);
-            
-            const response = await axios.get(`${API_BASE_URL}/api/heatmap?blokId=${idBlokTargetGGE}`);
-            const tileUrl = response.data.tileUrl;
-
-            if (tileUrl) {
-                if (map.current.getLayer?.('gee-kriging-layer')) map.current.removeLayer('gee-kriging-layer');
-                if (map.current.getSource?.('gee-kriging-source')) map.current.removeSource('gee-kriging-source');
-
-                map.current.addSource('gee-kriging-source', {
-                    type: 'raster',
-                    tiles: [tileUrl],
-                    tileSize: 256
-                });
-
-                map.current.addLayer({
-                    id: 'gee-kriging-layer',
-                    type: 'raster',
-                    source: 'gee-kriging-source',
-                    paint: {
-                        'raster-opacity': 0.55,
-                        'raster-fade-duration': 600 
-                    }
-                }, 'blok-line-layer'); 
-            }
+            );
+            if (requestId !== spatialRequestRef.current) return; // abaikan respons usang
+            const data = response.data || {};
+            setKrigingData(data.grid, data.anomalies);
+            setSpatialInfo(data.success ? data : null);
         } catch (error) {
-            console.error("❌ [GEE] Gagal memuat gambar interpolasi GEE:", error.message);
+            if (requestId !== spatialRequestRef.current) return;
+            console.error("❌ [Spatial ML] Gagal memuat interpolasi Kriging:", error.message);
+            setKrigingData(null, null);
+            setSpatialInfo(null);
         } finally {
-            setIsLoadingEBK(false);
+            if (requestId === spatialRequestRef.current) {
+                setIsLoadingEBK(false);
+                updateVectorData(); // segarkan fallback heatmap density
+            }
         }
     };
 
@@ -377,7 +514,7 @@ const DashboardMap = ({
 
             // Update Data Heatmap Kemasakan Kontinu
             if (map.current.getSource('sampel-heatmap-source')) {
-                const heatmapFeatures = showHeatmap ? sampelTampil.map(titik => {
+                const heatmapFeatures = (showHeatmap && !krigingHasGridRef.current) ? sampelTampil.map(titik => {
                     const lng = parseFloat(titik?.longitude || titik?.lng || titik?.geometry?.coordinates?.[0]);
                     const lat = parseFloat(titik?.latitude || titik?.lat || titik?.geometry?.coordinates?.[1]);
                     const brix = parseFloat(titik?.nilai_brix || titik?.properties?.nilai_brix || 0);
@@ -504,10 +641,19 @@ const DashboardMap = ({
 
     useEffect(() => {
         if (isMapReady) {
-            fetchGEEHeatmap();  
+            fetchSpatialInterpolation();  
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedLahan, selectedBlok, lahanData, blokData, sampelData, isMapReady]);
+    }, [selectedLahan, selectedBlok, lahanData, blokData, sampelData, isMapReady, spatialMethod]);
+
+    // Toggle visibilitas layer model spasial mengikuti tombol "Gradien Kemasakan"
+    useEffect(() => {
+        if (!isMapReady || !map.current) return;
+        const vis = showHeatmap ? 'visible' : 'none';
+        ['kriging-grid-layer', 'kriging-anomaly-layer'].forEach(id => {
+            if (map.current.getLayer(id)) map.current.setLayoutProperty(id, 'visibility', vis);
+        });
+    }, [showHeatmap, isMapReady]);
 
     return (
         <div className="bg-white p-4 rounded-xl shadow flex flex-col border border-gray-100 relative">
@@ -527,7 +673,7 @@ const DashboardMap = ({
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Memproses Komputasi Kriging GEE...
+                        Memproses Interpolasi Kriging...
                     </span>
                 )}
             </div>
@@ -535,6 +681,193 @@ const DashboardMap = ({
             {/* Peta Ukuran Proporsional & Nyaman */}
             <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 shadow-inner h-[500px] lg:h-[550px] xl:h-[600px] min-h-[440px]">
                 <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+
+                {/* 🌟 PANEL INFO MODEL SPASIAL (KIRI ATAS) */}
+                {showHeatmap && spatialInfo?.summary && (
+                    <div className="absolute top-4 left-4 z-10 w-[276px] bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-emerald-500/20 overflow-hidden select-none transition-all">
+                        {/* Header Panel */}
+                        <div className="px-3.5 py-2.5 bg-gradient-to-r from-slate-50 to-emerald-50/40 border-b border-slate-100 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                                    </svg>
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-[9px] font-mono font-bold uppercase tracking-widest text-emerald-600 leading-none">
+                                        Model Spasial Utama
+                                    </div>
+                                    <div className="text-[12.5px] font-extrabold text-slate-900 truncate mt-0.5" title={spatialInfo.method_label || ''}>
+                                        {spatialInfo.method === 'hybrid_rk'
+                                            ? 'Hybrid RF + Kriging'
+                                            : spatialInfo.method === 'ked'
+                                                ? 'Kriging External Drift'
+                                                : spatialInfo.method === 'kriging'
+                                                    ? 'Ordinary Kriging'
+                                                    : 'IDW (Fallback)'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                {spatialInfo.source === 'fallback_client' && (
+                                    <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
+                                        Demo
+                                    </span>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSpatialPanelOpen(!isSpatialPanelOpen)}
+                                    className="w-6 h-6 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 flex items-center justify-center transition-colors"
+                                    title={isSpatialPanelOpen ? 'Sembunyikan detail' : 'Tampilkan detail'}
+                                >
+                                    <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${isSpatialPanelOpen ? '' : '-rotate-90'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {isSpatialPanelOpen && (
+                            <div className="p-3.5 space-y-3 text-xs">
+                                {/* Pemilih 2 Algoritma Utama: Hybrid Regression-Kriging & KED */}
+                                <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/70">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSpatialMethod('hybrid_rk')}
+                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                            spatialMethod === 'hybrid_rk'
+                                                ? 'bg-emerald-600 text-white shadow-sm'
+                                                : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
+                                        }`}
+                                        title="Hybrid Regression-Kriging (Random Forest + Ordinary Kriging Residual)"
+                                    >
+                                        Hybrid RF+Kriging
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSpatialMethod('ked')}
+                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                            spatialMethod === 'ked'
+                                                ? 'bg-emerald-600 text-white shadow-sm'
+                                                : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
+                                        }`}
+                                        title="Kriging with External Drift (Gaussian Semivariogram + Drift)"
+                                    >
+                                        KED (Drift)
+                                    </button>
+                                </div>
+
+                                {/* Estimasi Brix */}
+                                <div className="flex items-end justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+                                    <div>
+                                        <div className="text-[10px] font-medium text-slate-500">Rata-rata Estimasi</div>
+                                        <div className="font-mono text-lg font-extrabold text-slate-900 leading-tight mt-0.5">
+                                            {spatialInfo.summary.brix_rata}°<span className="text-[11px] font-bold text-slate-400 ml-0.5">Bx</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-[10px] font-medium text-slate-500">Rentang Area</div>
+                                        <div className="font-mono text-xs font-bold text-slate-700 mt-0.5">
+                                            {spatialInfo.summary.brix_min}° – {spatialInfo.summary.brix_max}°
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Distribusi Zona + Progress Bar */}
+                                <div>
+                                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                        <span>Sebaran Zona</span>
+                                        <span className="font-mono font-medium text-slate-400 normal-case">
+                                            grid {spatialInfo.summary.ukuran_sel_meter} m
+                                        </span>
+                                    </div>
+                                    <div className="w-full h-2 rounded-full overflow-hidden flex bg-slate-100">
+                                        {spatialInfo.summary.persen_zona.tinggi > 0 && (
+                                            <div style={{ width: `${spatialInfo.summary.persen_zona.tinggi}%` }} className="bg-red-500 h-full" />
+                                        )}
+                                        {spatialInfo.summary.persen_zona.sedang > 0 && (
+                                            <div style={{ width: `${spatialInfo.summary.persen_zona.sedang}%` }} className="bg-amber-400 h-full" />
+                                        )}
+                                        {spatialInfo.summary.persen_zona.rendah > 0 && (
+                                            <div style={{ width: `${spatialInfo.summary.persen_zona.rendah}%` }} className="bg-emerald-500 h-full" />
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-1 mt-1.5 text-[10px] font-medium">
+                                        <div className="flex items-center gap-1 text-slate-700">
+                                            <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                                            <span>Tinggi <b className="font-mono">{spatialInfo.summary.persen_zona.tinggi}%</b></span>
+                                        </div>
+                                        <div className="flex items-center justify-center gap-1 text-slate-700">
+                                            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                                            <span>Sedang <b className="font-mono">{spatialInfo.summary.persen_zona.sedang}%</b></span>
+                                        </div>
+                                        <div className="flex items-center justify-end gap-1 text-slate-700">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                            <span>Rendah <b className="font-mono">{spatialInfo.summary.persen_zona.rendah}%</b></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Validasi Out-of-Sample & Komparasi 2 Algoritma Utama */}
+                                {spatialInfo.validation ? (
+                                    <div className="pt-2.5 border-t border-slate-100 space-y-2">
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                                            <span>Validasi ({spatialInfo.validation.cv_mode || 'CV'})</span>
+                                            <span className="font-mono font-semibold text-slate-400 normal-case">
+                                                {spatialInfo.validation.n_sampel} titik sampel
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="bg-emerald-50/70 border border-emerald-200/70 rounded-xl px-2.5 py-1.5">
+                                                <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-wide">Akurasi</div>
+                                                <div className="font-mono text-sm font-extrabold text-emerald-800">
+                                                    {spatialInfo.validation.akurasi_persen}%
+                                                </div>
+                                            </div>
+                                            <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1.5">
+                                                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">MAE</div>
+                                                <div className="font-mono text-sm font-extrabold text-slate-800">
+                                                    ±{Number(spatialInfo.validation.mae).toFixed(2)}°
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {spatialInfo.comparison?.hybrid_rk && spatialInfo.comparison?.ked && (
+                                            <div className="flex items-center justify-between text-[10px] bg-slate-50/90 border border-slate-100 rounded-lg px-2.5 py-1.5 text-slate-600">
+                                                <span>
+                                                    RF+Krig: <b className="font-mono text-slate-900">{spatialInfo.comparison.hybrid_rk.akurasi_persen}%</b>
+                                                </span>
+                                                <span className="text-slate-300">|</span>
+                                                <span>
+                                                    KED: <b className="font-mono text-slate-900">{spatialInfo.comparison.ked.akurasi_persen}%</b>
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="pt-2 border-t border-slate-100 text-[11px] text-amber-700 bg-amber-50/70 border border-amber-200/70 rounded-lg px-2.5 py-1.5">
+                                        Butuh ≥ 4 titik sampel untuk validasi silang
+                                    </div>
+                                )}
+
+                                {/* Peringatan Anomali */}
+                                {spatialInfo.summary.jumlah_anomali > 0 && (
+                                    <div className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl bg-violet-50 border border-violet-200/80">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="w-3 h-3 rounded-full border-[2.5px] border-violet-600 shrink-0" />
+                                            <span className="text-[11px] font-bold text-violet-900 truncate">
+                                                {spatialInfo.summary.jumlah_anomali} Titik Anomali
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] font-medium text-violet-600 shrink-0">
+                                            Klik lingkar ungu
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
                 
                 {/* 🌟 TOMBOL TOGGLE (MENGAMBANG DI PETA KIRI BAWAH) */}
                 <div className="absolute bottom-6 left-6 z-10 flex items-center gap-2">

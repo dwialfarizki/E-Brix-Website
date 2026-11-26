@@ -44,6 +44,8 @@ function App() {
   const [selectedLahan, setSelectedLahan] = useState('all');
   const [selectedBlok, setSelectedBlok] = useState('all');
   const [brixFilter, setBrixFilter] = useState('all');
+  const [spatialMethod, setSpatialMethod] = useState('hybrid_rk');
+  const [spatialInfo, setSpatialInfo] = useState(null);
 
   const [stats, setStats] = useState({ avg_brix: 0, max_brix: 0, min_brix: 0, total_titik: 0 });
 
@@ -551,19 +553,29 @@ function App() {
               blokData={blokData}
               lahanData={lahanData}
               onDeletePoin={handleDeletePoin}
+              spatialMethod={spatialMethod}
+              setSpatialMethod={setSpatialMethod}
+              spatialInfo={spatialInfo}
+              setSpatialInfo={setSpatialInfo}
             />
           )}
 
           {activeTab === 'analisis' && (
             <AnalysisData
               selectedLahan={selectedLahan}
+              setSelectedLahan={setSelectedLahan}
               selectedBlok={selectedBlok}
+              setSelectedBlok={setSelectedBlok}
               sampelData={sampelData}
               blokData={blokData}
               lahanData={lahanData}
               setSampelData={setSampelData}
               onDeletePoin={handleDeletePoin}
               setActiveTab={setActiveTab}
+              spatialMethod={spatialMethod}
+              setSpatialMethod={setSpatialMethod}
+              spatialInfo={spatialInfo}
+              setSpatialInfo={setSpatialInfo}
             />
           )}
 
